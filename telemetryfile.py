@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# MAVSDK-Python: https://mavsdk.mavlink.io/main/en/python/
 from mavsdk import System
 
 import time
@@ -27,17 +28,18 @@ class TelemetryFile(object):
     def __init__(self):
         self.platformOS = None # OS connection string
         self.drone = None # Drone object
+        
         self.fileName = None # Telemetry file name
         self.buffer = StringIO() # String buffer
         
         self.time = None # POSIX time
         self.heading = None # Heading in degrees (range: 0 to +360)
-        self.roll = None # Roll angular velocity
-        self.pitch = None # Pitch angular velocity
-        self.yaw = None # Yaw angular velocity
-        self.latitude = None # Latitude in degrees (range: -90 to +90)
-        self.longitude = None # Longitude in degrees (range: -180 to +180)
-        self.altitude = None # Altitude AMSL (above mean sea level) in metres
+        self.roll = None # Roll angular velocity (AVB)
+        self.pitch = None # Pitch angular velocity (AVB)
+        self.yaw = None # Yaw angular velocity (AVB)
+        self.latitude = None # Latitude in degrees (range: -90 to +90) (Position)
+        self.longitude = None # Longitude in degrees (range: -180 to +180) (Position)
+        self.altitude = None # Altitude AMSL (above mean sea level) in metres (Position)
 
     async def connectToPixhawk(self):
         # Initialize the drone
@@ -60,34 +62,18 @@ class TelemetryFile(object):
             self.heading = heading.heading_deg
             break
             
-    async def setRoll(self):
-        async for roll in self.drone.telemetry.attitude_angular_velocity_body():
-            self.roll = roll.pitch_rad_s
-            break
-            
-    async def setPitch(self):
-        async for pitch in self.drone.telemetry.attitude_angular_velocity_body():
-            self.pitch = pitch.roll_rad_s
-            break
-            
-    async def setYaw(self):
-        async for yaw in self.drone.telemetry.attitude_angular_velocity_body():
-            self.yaw = yaw.yaw_rad_s
+    async def attitudeAVB(self):
+        async for attitude in self.drone.telemetry.attitude_angular_velocity_body():
+            self.roll = attitude.pitch_rad_s
+            self.pitch = attitude.roll_rad_s
+            self.yaw = attitude.yaw_rad_s
             break
     
-    async def setLatitude(self):
-        async for latitude in self.drone.telemetry.position():
-            self.latitude = latitude.latitude_deg
-            break
-            
-    async def setLongitude(self):
-        async for longitude in self.drone.telemetry.position():
-            self.longitude = longitude.longitude_deg
-            break
-            
-    async def setAltitude(self):
-        async for altitude in self.drone.telemetry.position():
-            self.longitude = altitude.absolute_altitude_m
+    async def setPosition(self):
+        async for position in self.drone.telemetry.position():
+            self.latitude = position.latitude_deg
+            self.longitude = position.longitude_deg
+            self.altitude = position.absolute_altitude_m
             break
             
     async def createFile(self):
@@ -105,6 +91,7 @@ class TelemetryFile(object):
     # Note: this not the fastest way of writing to a buffer nor the slowest.
     # However, it is easy to read and understand what is happening.
     async def writeToBuffer(self):
+        # TODO: line below is temp
         convertedTime = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(self.time))
     
         (self.buffer).write(convertedTime + "\t" + str(self.heading) + "\t" +
@@ -113,6 +100,10 @@ class TelemetryFile(object):
             str(self.altitude) + "\n")
             
     async def writeToFile(self):
+        # TODO: line below is temp
+        convertedTime = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(self.time))
+        print(convertedTime)
+        
         file = open(self.fileName, "a")
         file.write((self.buffer).getvalue())
         file.close()
@@ -137,8 +128,6 @@ class TelemetryFile(object):
             # Linux
             connectionString = "serial:///dev/ttyACM0"
         
-        return
-        
     def askExit(self, signame, loop):
         print("Caught signal %s, now exiting" % signame)
         loop.stop()
@@ -161,15 +150,13 @@ async def main():
     currentIteration = 0
     
     while True:
-        await telemetryFileObject.setTime()
-        await telemetryFileObject.setHeading()
-        await telemetryFileObject.setRoll()
-        await telemetryFileObject.setPitch()
-        await telemetryFileObject.setYaw()
-        await telemetryFileObject.setLatitude()
-        await telemetryFileObject.setLongitude()
-        await telemetryFileObject.setAltitude()
-        
+        await asyncio.gather(
+                telemetryFileObject.setTime(),
+                telemetryFileObject.setHeading(),
+                telemetryFileObject.attitudeAVB(),
+                telemetryFileObject.setPosition(),
+        )
+
         await telemetryFileObject.writeToBuffer()
         
         if (currentIteration == 60):
@@ -181,18 +168,18 @@ async def main():
         currentIteration += 1 
         
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio debug mode: https://docs.python.org/dev/library/asyncio-dev.html#
+    asyncio.run(main(), debug=True)
 
 
-# TODO: Change timing to be scheduled.
-# loop.call_later(.5, lambda : telemetryFileObject.writeToBuffer())
-# loop.call_later(30, lambda : telemetryFileObject.writeToFile())
-#
 # TODO: Comments.
 # TODO: Upload to Github.
-# TODO: Handle shutting down process gracefully.
+# TODO: Handle shutting down process gracefully from Supervisor.
 # TODO: Add tests/exception handlers/error codes.
+# TODO: Most functions in MAVSDK-Python can raise exceptions that your code should handle with try... except
 # TODO: Add exception to ensure all values inside the file.write statement are valid/expected.
+# TODO: Pass exception error codes up pipeline to be processed by Supervisor.
 # TODO: Change connection string back.
-
+#
 # NOTE: Telemetry file is currently being written current directory. Will need to be changed later.
+# NOTE: Can set .gather function call to a result as a list. This list could be used to identify error codes.
