@@ -1,1 +1,0 @@
-Time_POSIX	Heading_deg	Pitch_rad	Roll_rad	Yaw_rad	Lat	Long	Alt_m_AGL

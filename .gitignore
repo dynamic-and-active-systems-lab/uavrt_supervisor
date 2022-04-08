@@ -29,4 +29,8 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Generated telemetry files 
+
+Telemetry_File_*
+
 # End of https://www.toptal.com/developers/gitignore/api/macos
