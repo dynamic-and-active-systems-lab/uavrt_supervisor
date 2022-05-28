@@ -7,15 +7,6 @@ https://www.ardusub.com/developers/pymavlink.html
 https://github.com/ArduPilot/pymavlink/tree/master/examples
 '''
 
-# Information on Python logging and a logging cookbook:
-# https://docs.python.org/3/library/logging.html
-# https://docs.python.org/3/howto/logging-cookbook.html#logging-cookbook
-#
-# We did not go with Python approach to logging as ROS supplies this
-# functionality natively. This allows to more fully utilize the ROS framework.
-# How does this logging interact/interfere/match the logging from ROS?
-# import logging
-
 # Information on mavutil.py:
 # https://github.com/ArduPilot/pymavlink/blob/master/mavutil.py
 from pymavlink import mavutil
@@ -23,6 +14,10 @@ from pymavlink import mavutil
 # Information on pathlib module and Path:
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
+
+# Necessary for catching SerialException
+# https://github.com/pyserial/pyserial/blob/master/serial/serialutil.py
+from serial.serialutil import SerialException
 
 # Python doesn’t have built-in constant types.
 # By convention, Python uses a variable whose name contains all capital letters
@@ -69,7 +64,7 @@ def establishMavlinkConnection(logger):
             return connection
         else:
             logger.warn(
-                "Pixhawk is connection via serial but is NOT recieving heartbeat messages!")
+                "Pixhawk is connected via serial but is NOT recieving heartbeat messages!")
             return None
     except FileNotFoundError as instance:
         logger.warn("Pixhawk is not connected via serial!")
@@ -78,6 +73,11 @@ def establishMavlinkConnection(logger):
         # exception subclasses
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
+    except SerialException as instance:
+        logger.warn("Pixhawk has been disconnected or reconnected!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
+        return None
 
     # Attempt to establish an UDP connection with a Pix4 SITL (e.g. Gazebo)
     # This sets the system and component ID of remote system for the UDP link
@@ -97,15 +97,26 @@ def checkHeartbeat(connection, logger):
     # Check for a heartbeat, it should be every 1 Hz
     # This function is blocking
     # Timeout is in seconds
-    heartbeat = connection.recv_match(
-        type='HEARTBEAT', blocking=True, timeout=1)
+    try:
+        heartbeat = connection.recv_match(
+            type='HEARTBEAT', blocking=True, timeout=1)
 
-    if heartbeat == None:
-        logger.warn("Heartbeat not recieved!")
+        if heartbeat != None:
+            logger.info("Heartbeat was recieved!")
+            return heartbeat
+        else:
+            logger.warn("Heartbeat not recieved!")
+            return None
+    except AttributeError as instance:
+        logger.warn("Connection does not exist!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
         return None
-    else:
-        logger.info("Heartbeat was recieved!")
-        return connection
+    except SerialException as instance:
+        logger.warn("Pixhawk has been disconnected or reconnected!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
+        return None
 
 
 def checkGPS(connection, logger):
@@ -113,12 +124,12 @@ def checkGPS(connection, logger):
     try:
         gps = connection.messages['GLOBAL_POSITION_INT']
         logger.info("GPS satellite(s) locked.")
-        return True
+        return gps
     except KeyError as instance:
         logger.warn("No GPS satellite(s) found!")
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
-        return False
+        return None
 
 
 # If you just want to synchronously access the last message of a
@@ -129,19 +140,14 @@ def checkGPS(connection, logger):
 # MAVLink message types are defined here:
 # https://mavlink.io/en/messages/common.html
 # We use GLOBAL_POSITION_INT ( #33 ) for lon, lat, alt
-# and ? for quaternion data (x, y, z, w)
+# and ATTITUDE_QUATERNION ( #31 ) for quaternion data (x, y, z, w)
 #
-# Note: I'm not sure what type of errors would be thrown here,
-# so I throw the BaseException case to be safe.
-#
-# TODO: I'm not sure if .recv_match or .messages[] is better here.
-# TODO: What quaternion message type do I use???
 # TODO: How do I catch BAD_DATA? Should I make a seperate except clause for it?
 def getLongitude(connection, logger):
     try:
         longitude = connection.messages['GLOBAL_POSITION_INT'].lon
         return longitude
-    except (KeyError, BaseException) as instance:
+    except KeyError as instance:
         logger.warn("Unable to retrieve longitude!")
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
@@ -152,7 +158,7 @@ def getLatitude(connection, logger):
     try:
         latitude = connection.messages['GLOBAL_POSITION_INT'].lat
         return latitude
-    except (KeyError, BaseException) as instance:
+    except KeyError as instance:
         logger.warn("Unable to retrieve latitude!")
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
@@ -163,8 +169,48 @@ def getAltitude(connection, logger):
     try:
         altitude = connection.messages['GLOBAL_POSITION_INT'].alt
         return altitude
-    except (KeyError, BaseException) as instance:
+    except KeyError as instance:
         logger.warn("Unable to retrieve altitude!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
+        return None
+
+def getQuaternionX(connection, logger):
+    try:
+        quaternionX = connection.messages['ATTITUDE_QUATERNION'].q2
+        return quaternionX
+    except KeyError as instance:
+        logger.warn("Unable to retrieve quaternion X!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
+        return None
+
+def getQuaternionY(connection, logger):
+    try:
+        quaternionY = connection.messages['ATTITUDE_QUATERNION'].q3
+        return quaternionY
+    except KeyError as instance:
+        logger.warn("Unable to retrieve quaternion Y!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
+        return None
+
+def getQuaternionZ(connection, logger):
+    try:
+        quaternionZ = connection.messages['ATTITUDE_QUATERNION'].q4
+        return quaternionZ
+    except KeyError as instance:
+        logger.warn("Unable to retrieve quaternion Z!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
+        return None
+
+def getQuaternionW(connection, logger):
+    try:
+        quaternionW = connection.messages['ATTITUDE_QUATERNION'].q1
+        return quaternionW
+    except KeyError as instance:
+        logger.warn("Unable to retrieve quaternion W!")
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
         return None

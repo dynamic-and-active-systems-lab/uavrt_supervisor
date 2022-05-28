@@ -5,28 +5,23 @@ Based on the example code from these sites:
 https://docs.ros.org/en/humble/Tutorials.html
 '''
 
-# ROS2 testing library that provides insight into the functionlity of
-# the different ROS2 classes.
-# https://github.com/ros2/rclpy/tree/master/rclpy/test
-
 # When importing Python files that reside in the same ws/src/package, you will
 # need to specify the name of the package as well as the file.
 #
 # This Stackoverflow question/answer helped me figured out this issue:
 # https://stackoverflow.com/a/58504978
-from data_streaming.mavlink_helper import *
+from data_streaming.supervisor_publishers import *
+from data_streaming.supervisor_subscribers import *
 
 # Import rclpy so its classes can be used.
+# https://docs.ros2.org/latest/api/rclpy/index.html
+# ROS2 testing library that provides insight into the functionlity of
+# the different ROS2 classes.
+# https://github.com/ros2/rclpy/tree/master/rclpy/test
 import rclpy
 
 # Import Node class so that we can create Nodes.
 from rclpy.node import Node
-
-# Import Parameter class so we can create Paramaters.
-# https://docs.ros.org/en/humble/Tutorials/Using-Parameters-In-A-Class-Python.html
-# https://docs.ros2.org/latest/api/rclpy/api/parameters.html
-# https://roboticsbackend.com/rclpy-params-tutorial-get-set-ros2-params-with-python/
-from rclpy.parameter import Parameter
 
 # Logging functionality currently supported in ROS 2.
 # Log messages can be formatted with native Python .format functioanlity!
@@ -34,17 +29,37 @@ from rclpy.parameter import Parameter
 # https://docs.ros.org/en/humble/Tutorials/Logging-and-logger-configuration.html
 # https://github.com/ros2/rclpy/blob/master/rclpy/test/test_logging.py
 # https://github.com/ros2/launch/blob/master/launch/launch/logging/__init__.py
+#
+# Information on Python logging and a logging cookbook:
+# https://docs.python.org/3/library/logging.html
+# https://docs.python.org/3/howto/logging-cookbook.html#logging-cookbook
+#
+# We did not go with Python approach to logging as ROS supplies this
+# functionality natively. This allows to more fully utilize the ROS framework.
+# However, these links explore the functioality behidn ROS logger.
 from rclpy.logging import LoggingSeverity
 
-# A set of packages which contain common interface files (.msg and .srv) for ROS2:
-# https://github.com/ros2/common_interfaces/tree/master
+# I made 3 files: supervisor_publishers, supervisor_subscribers,
+# and supervisor_servicers.
+# These files house ROS2 runctionality of the Supervisor Node.
+# It's not advertised on ROS2's site/wiki that you can split the
+# publisher/subscriber callbacks from the node, but it's not taboo either.
+# I feel it makes the codebase much easier to follow when the functions are in
+# separate files.
 #
-# Import the built-in PoseStamped message type that the node uses to structure
-# the telemetry data that it passes on to the /atennapPose topic.
-from geometry_msgs.msg import PoseStamped
+# In order to do this, you need to either use partial() or lambda for the
+# callbacks.
+# https://discourse.ros.org/t/callback-args-in-ros2/4727/2
+# https://docs.python.org/3/library/functools.html
+from functools import partial
 
 # TODO: Create launch logging configuration file
 # UNIQUE_LOG_BASE_PATH = '~/uavrt_ws/src/data_streaming/log'
+# TODO: Need to add unit testing eventually.
+# TODO: Not sure how make it so import/from statments are all in one file/
+# organized/centralized.
+# TODO: Organize everything into a callback_group to ensure the proper order
+# of callbacks and log messages.
 
 
 class Supervisor(Node):
@@ -58,20 +73,36 @@ class Supervisor(Node):
         logger.info("Supervisor node has been created.")
         logger.info("Logging severity has been set to info.")
 
-        self.connection = establishMavlinkConnection(logger)
+        self.heartbeatWatchdog = 0
+        self.connection = None
 
-        if self.connection != None and checkGPS(self.connection, logger) != False:
-                x = float(getLongitude(self.connection, logger))
-                y = float(getLatitude(self.connection, logger))
-                z = float(getAltitude(self.connection, logger))
+        # Heartbeat status monitor
+        # Format: Msg type, topic, queue size
+        self.heartbeatPublisher = self.create_publisher(
+            DiagnosticArray,
+            '/heartbeatStatus',
+            10)
+        self.timer = self.create_timer(
+            PUBLISH_HEARTBEAT_STATUS_TIME_PERIOD, partial(heartbeatMonitor, self))
+        logger.info("Heartbeat monitor is now publishing.")
+
+        # Telemetry monitor
+        # Format: Msg type, topic, queue size
+        self.telemetryDataPublisher = self.create_publisher(
+            PoseStamped,
+            '/antennaPose',
+            10)
+        self.timer = self.create_timer(
+            PUBLISH_TELEMETRY_DATA_TIME_PERIOD, partial(telemetryMonitor, self))
+        logger.info("Telemetry monitor is now publishing.")
 
 
-def main(args = None):
-    rclpy.init(args = args)
+def main(args=None):
+    rclpy.init(args=args)
 
-    supervisorNode=Supervisor()
+    supervisorNode = Supervisor()
     # logger is a rclpy.impl.rcutils_logger.RcutilsLogger object
-    logger=supervisorNode.get_logger()
+    logger = supervisorNode.get_logger()
 
     try:
         rclpy.spin(supervisorNode)
@@ -90,5 +121,3 @@ def main(args = None):
 
 if __name__ == '__main__':
     main()
-
-# TODO: Need to add unit testing eventually.
