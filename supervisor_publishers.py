@@ -5,7 +5,9 @@ Based on the example code from these sites:
 https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscriber.html
 '''
 
+
 from data_streaming.mavlink_helper import *
+from data_streaming.supervisor_bags import *
 
 # Import Parameter class so we can create Paramaters.
 # Not using this functioanlity at the moment since it doesn't seem to add much
@@ -30,6 +32,24 @@ from geometry_msgs.msg import *
 # http://wiki.ros.org/diagnostics/Tutorials/Creating%20a%20Diagnostic%20Analyzer#Generating_Diagnostics_Input
 from diagnostic_msgs.msg import *
 
+# I made 3 files: supervisor_publishers, supervisor_subscribers,
+# and supervisor_servicers.
+# These files house ROS2 runctionality of the Supervisor Node.
+# It's not advertised on ROS2's site/wiki that you can split the
+# publisher/subscriber callbacks from the node, but it's not taboo either.
+# I feel it makes the codebase much easier to follow when the functions are in
+# separate files.
+#
+# In order to do this, you need to either use partial() or lambda for the
+# callbacks.
+# https://discourse.ros.org/t/callback-args-in-ros2/4727/2
+# https://docs.python.org/3/library/functools.html
+from functools import partial
+
+# Queue size is a required QoS (quality of service) setting that limits the
+# amount of queued messages if a subscriber is not receiving them fast enough.
+QUEUE_SIZE = 10
+
 # Heartbeat unique string for heartbeatStatus messages.
 # Hex(heartbeat)
 HEARTBEAT_ID = '776f7264'
@@ -41,6 +61,20 @@ MISSED_HEARTBEAT_LIMIT = 5
 
 # Rate at which telemetry data will be published and written to memory.
 PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
+
+
+def createHeatbeatPublisher(supervisorNode):
+    logger = supervisorNode.get_logger()
+
+    # Format: Msg type, topic, queue size
+    supervisorNode.heartbeatPublisher = supervisorNode.create_publisher(
+        DiagnosticArray,
+        '/heartbeatStatus',
+        QUEUE_SIZE)
+    supervisorNode.timer = supervisorNode.create_timer(
+        PUBLISH_HEARTBEAT_STATUS_TIME_PERIOD,
+        partial(heartbeatMonitor, supervisorNode))
+    logger.info("Heartbeat monitor is now publishing.")
 
 
 def heartbeatMonitor(supervisorNode):
@@ -86,9 +120,25 @@ def heartbeatMonitor(supervisorNode):
 
     supervisorNode.heartbeatPublisher.publish(statusArray)
 
+    # Note: This could be made into a subscriber to reinforce abstraction but
+    # it seems like overkill.
     if status.message == 'Dead':
         logger.info("Attempting to reestablish connection.")
         supervisorNode.connection = establishMavlinkConnection(logger)
+
+
+def createTelemetryPublisher(supervisorNode):
+    logger = supervisorNode.get_logger()
+
+    # Format: Msg type, topic, queue size
+    supervisorNode.telemetryDataPublisher = supervisorNode.create_publisher(
+        PoseStamped,
+        '/antennaPose',
+        QUEUE_SIZE)
+    supervisorNode.timer = supervisorNode.create_timer(
+        PUBLISH_TELEMETRY_DATA_TIME_PERIOD,
+        partial(telemetryMonitor, supervisorNode))
+    logger.info("Telemetry monitor is now publishing.")
 
 
 def telemetryMonitor(supervisorNode):
@@ -121,6 +171,13 @@ def telemetryMonitor(supervisorNode):
         supervisorNode.telemetryDataPublisher.publish(poseStamped)
 
         logger.info("Telemetry data has been successfully published.")
+
+        # TODO: This shouldn't go here. I'm using this place for testing
+        # purposes. It doesn't have a home atm. 
+        recordTelemetryData(supervisorNode, poseStamped)
+
+        logger.info("Telemetry data has been successfully recorded.")
+
     else:
         logger.warn("Unable to publish telemetry data!")
         logger.warn("Connection or GPS lock was not established!")

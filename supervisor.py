@@ -12,6 +12,7 @@ https://docs.ros.org/en/humble/Tutorials.html
 # https://stackoverflow.com/a/58504978
 from data_streaming.supervisor_publishers import *
 from data_streaming.supervisor_subscribers import *
+from data_streaming.supervisor_bags import *
 
 # Import rclpy so its classes can be used.
 # https://docs.ros2.org/latest/api/rclpy/index.html
@@ -39,19 +40,6 @@ from rclpy.node import Node
 # However, these links explore the functioality behidn ROS logger.
 from rclpy.logging import LoggingSeverity
 
-# I made 3 files: supervisor_publishers, supervisor_subscribers,
-# and supervisor_servicers.
-# These files house ROS2 runctionality of the Supervisor Node.
-# It's not advertised on ROS2's site/wiki that you can split the
-# publisher/subscriber callbacks from the node, but it's not taboo either.
-# I feel it makes the codebase much easier to follow when the functions are in
-# separate files.
-#
-# In order to do this, you need to either use partial() or lambda for the
-# callbacks.
-# https://discourse.ros.org/t/callback-args-in-ros2/4727/2
-# https://docs.python.org/3/library/functools.html
-from functools import partial
 
 # TODO: Create launch logging configuration file
 # UNIQUE_LOG_BASE_PATH = '~/uavrt_ws/src/data_streaming/log'
@@ -75,26 +63,20 @@ class Supervisor(Node):
 
         self.heartbeatWatchdog = 0
         self.connection = None
+        self.telemetryDirectoryName = None
+        self.telemetryFileName = None
 
         # Heartbeat status monitor
-        # Format: Msg type, topic, queue size
-        self.heartbeatPublisher = self.create_publisher(
-            DiagnosticArray,
-            '/heartbeatStatus',
-            10)
-        self.timer = self.create_timer(
-            PUBLISH_HEARTBEAT_STATUS_TIME_PERIOD, partial(heartbeatMonitor, self))
-        logger.info("Heartbeat monitor is now publishing.")
+        createHeatbeatPublisher(self)
 
         # Telemetry monitor
-        # Format: Msg type, topic, queue size
-        self.telemetryDataPublisher = self.create_publisher(
-            PoseStamped,
-            '/antennaPose',
-            10)
-        self.timer = self.create_timer(
-            PUBLISH_TELEMETRY_DATA_TIME_PERIOD, partial(telemetryMonitor, self))
-        logger.info("Telemetry monitor is now publishing.")
+        createTelemetryPublisher(self)
+
+        # Telemetry bag writer
+        createTelemetryBagWriter(self)
+
+        # Telemetry bag reader
+        createTelemetryBagReader(self)
 
 
 def main(args=None):

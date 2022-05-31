@@ -175,6 +175,7 @@ def getAltitude(connection, logger):
         logger.warn("Instance: {}".format(instance))
         return None
 
+
 def getQuaternionX(connection, logger):
     try:
         quaternionX = connection.messages['ATTITUDE_QUATERNION'].q2
@@ -184,6 +185,7 @@ def getQuaternionX(connection, logger):
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
         return None
+
 
 def getQuaternionY(connection, logger):
     try:
@@ -195,6 +197,7 @@ def getQuaternionY(connection, logger):
         logger.warn("Instance: {}".format(instance))
         return None
 
+
 def getQuaternionZ(connection, logger):
     try:
         quaternionZ = connection.messages['ATTITUDE_QUATERNION'].q4
@@ -204,6 +207,7 @@ def getQuaternionZ(connection, logger):
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
         return None
+
 
 def getQuaternionW(connection, logger):
     try:
