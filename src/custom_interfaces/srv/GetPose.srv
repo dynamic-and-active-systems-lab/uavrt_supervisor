@@ -1,5 +1,5 @@
 # This is our custom service that requests one Time object named timestamp
-# and responds with an Pose object called interpolated_pose.
+# and responds with a Pose object called interpolated_pose.
 
 builtin_interfaces/Time timestamp
 ---
