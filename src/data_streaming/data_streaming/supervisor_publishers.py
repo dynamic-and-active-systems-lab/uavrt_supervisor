@@ -5,7 +5,6 @@ Based on the example code from these sites:
 https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscriber.html
 '''
 
-
 from data_streaming.mavlink_helper import *
 from data_streaming.supervisor_bags import *
 
@@ -20,6 +19,10 @@ from data_streaming.supervisor_bags import *
 # A set of packages which contain common interface files (.msg and .srv) for ROS2:
 # https://github.com/ros2/common_interfaces/tree/master
 #
+# Standard messages for ROS2.
+# Necessary for Header type messages.
+# https://github.com/ros2/common_interfaces/tree/master/std_msgs/msg
+from std_msgs.msg import *
 # Import the built-in Geometry message type that the node uses to structure
 # the telemetry data that it publishes on the /atennapPose topic.
 # Allows for /getPose service call as well.
@@ -45,6 +48,19 @@ from diagnostic_msgs.msg import *
 # https://discourse.ros.org/t/callback-args-in-ros2/4727/2
 # https://docs.python.org/3/library/functools.html
 from functools import partial
+
+# For array management; storing header information from PoseStamped objects
+# as well as the Pose portion of the objects.
+# https://numpy.org/doc/stable/user/quickstart.html
+# Note: Requires installing scipy - pip3 install numpy
+import numpy as np
+
+# Used to find the Pose object that corresponds to the timestamp passed into
+# the getPose service.
+# https://docs.scipy.org/doc/scipy/tutorial/general.html
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
+# Note: Requires installing scipy - pip3 install scipy
+from scipy import interpolate
 
 # Queue size is a required QoS (quality of service) setting that limits the
 # amount of queued messages if a subscriber is not receiving them fast enough.
@@ -145,14 +161,20 @@ def telemetryMonitor(supervisorNode):
     connection = supervisorNode.connection
     logger = supervisorNode.get_logger()
 
-    poseStamped = PoseStamped()
-    pose = Pose()
-    position = Point()
-    orientation = Quaternion()
-
     if connection != None and checkGPS(connection, logger) != None:
-        poseStamped.header.frame_id = "telemetryData"
-        poseStamped.header.stamp = supervisorNode.get_clock().now().to_msg()
+        header = Header()
+        poseStamped = PoseStamped()
+        pose = Pose()
+        position = Point()
+        orientation = Quaternion()
+
+        # We get the current time seperately since the value that is stored
+        # into the Node's time array needs to be in nanoseconds for
+        # interpolation
+        currentTime = supervisorNode.get_clock().now()
+
+        header.frame_id = "telemetryData"
+        header.stamp = currentTime.to_msg()
 
         position.x = float(getLongitude(connection, logger))
         position.y = float(getLatitude(connection, logger))
@@ -166,6 +188,7 @@ def telemetryMonitor(supervisorNode):
         pose.position = position
         pose.orientation = orientation
 
+        poseStamped.header = header
         poseStamped.pose = pose
 
         supervisorNode.telemetryDataPublisher.publish(poseStamped)
@@ -173,10 +196,14 @@ def telemetryMonitor(supervisorNode):
         logger.info("Telemetry data has been successfully published.")
 
         # TODO: This shouldn't go here. I'm using this place for testing
-        # purposes. It doesn't have a home atm. 
-        recordTelemetryData(supervisorNode, poseStamped)
+        # purposes. It doesn't have a home atm.
+        # recordTelemetryData(supervisorNode, poseStamped)
 
-        logger.info("Telemetry data has been successfully recorded.")
+        print(header.stamp)
+        print(supervisorNode.get_clock().now())
+
+        np.append(supervisorNode.telemetryHeaderArray, currentTime.nanoseconds)
+        np.append(supervisorNode.telemetryPoseArray, pose)
 
     else:
         logger.warn("Unable to publish telemetry data!")

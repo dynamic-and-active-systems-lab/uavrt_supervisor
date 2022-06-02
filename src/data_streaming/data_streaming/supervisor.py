@@ -12,6 +12,7 @@ https://docs.ros.org/en/humble/Tutorials.html
 # https://stackoverflow.com/a/58504978
 from data_streaming.supervisor_publishers import *
 from data_streaming.supervisor_subscribers import *
+from data_streaming.supervisor_servicers import *
 from data_streaming.supervisor_bags import *
 
 # Import rclpy so its classes can be used.
@@ -49,6 +50,8 @@ from rclpy.logging import LoggingSeverity
 # TODO: Organize everything into a callback_group to ensure the proper order
 # of callbacks and log messages.
 
+import time
+
 
 class Supervisor(Node):
 
@@ -66,6 +69,9 @@ class Supervisor(Node):
         self.telemetryDirectoryName = None
         self.telemetryFileName = None
 
+        self.telemetryHeaderArray = np.zeros(0, dtype=int)
+        self.telemetryPoseArray = np.zeros(0, dtype=Pose)
+
         # Heartbeat status monitor
         createHeatbeatPublisher(self)
 
@@ -73,11 +79,15 @@ class Supervisor(Node):
         createTelemetryPublisher(self)
 
         # Telemetry bag writer
-        createTelemetryBagWriter(self)
+        # createTelemetryBagWriter(self)
 
         # Telemetry bag reader
-        createTelemetryBagReader(self)
+        # createTelemetryBagReader(self)
 
+        # /getPose service
+        createGetPoseServicer(self)
+
+        #searchTelemetryArrays(self, 1, 1)
 
 def main(args=None):
     rclpy.init(args=args)

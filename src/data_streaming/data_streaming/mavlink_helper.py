@@ -40,6 +40,8 @@ UDP_IP_PORT = 'udp:0.0.0.0:14540'
 # I do it in this order since it is more difficult to scan for an open
 # UDP port than it is to check for a valid serial file descriptor.
 
+# TODO: Figure out serial reset
+# "command that would reset the serial port if I unplugged and then replugged in usb"
 
 def establishMavlinkConnection(logger):
 

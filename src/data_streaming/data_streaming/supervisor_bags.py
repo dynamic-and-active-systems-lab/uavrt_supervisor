@@ -56,7 +56,8 @@ def createTelemetryBagWriter(supervisorNode):
 
     try:
         supervisorNode.telemetryBagWriter.open(
-            storage_options, converter_options)
+            storage_options,
+            converter_options)
     # Happens if the directory already exists
     except RuntimeError as instance:
         logger.warn("Unable to create telemetry bag reader!")
@@ -86,6 +87,8 @@ def recordTelemetryData(supervisorNode, msg):
         serialize_message(msg),
         supervisorNode.get_clock().now().nanoseconds)
 
+    logger.info("Telemetry data has been successfully recorded.")
+
 
 def createTelemetryBagReader(supervisorNode):
     logger = supervisorNode.get_logger()
@@ -106,13 +109,16 @@ def createTelemetryBagReader(supervisorNode):
 
     try:
         supervisorNode.telemetryBagReader.open(
-            storage_options, converter_options)
+            storage_options,
+            converter_options)
     # Happens if the file could not be opened
     except RuntimeError as instance:
         logger.warn("Unable to create telemetry bag reader!")
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
         return None
+
+    supervisorNode.telemetryBagReader.reset_filter()
 
     logger.info("Telemetry bag reader has been successfully created.")
 
@@ -121,7 +127,7 @@ def createTelemetryBagReader(supervisorNode):
     # https://github.com/ros2/rosbag2/blob/d97e2911e074ec6ab5fd23a546b0ad04950b6750/rosbag2_py/test/test_sequential_reader.py#L44
 
 
-# TODO: Finish
+# Not sure if we're going to use bags or not 
 def telemetryBagToFile(supervisorNode):
     logger = supervisorNode.get_logger()
 
@@ -129,15 +135,4 @@ def telemetryBagToFile(supervisorNode):
 
     while reader.has_next():
         (topic, data, t) = reader.read_next()
-        msg_type = get_message(topic)
         msg = deserialize_message(data, msg_type)
-
-# TODO: Finish
-def searchTelemetryBag(supervisorNode):
-    logger = supervisorNode.get_logger()
-
-    reader = supervisorNode.telemetryBagReader
-
-    (topic, data, t) = reader.seek()
-    msg_type = get_message(topic)
-    msg = deserialize_message(data, msg_type)
