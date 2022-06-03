@@ -1,6 +1,6 @@
 # Supervisor portion of the UAV-RT architecture 
 
-This codebase acts as the middleware between the software running on Ground Control Station (GCS) and the nodes running on the Companion Computer. 
+This codebase acts as the middleware between the software running on the Ground Control Station (GCS) and the nodes/processes running on the Companion Computer. 
 
 The development of this code was funded via National Science Foundation grant no. 2104570.
 
