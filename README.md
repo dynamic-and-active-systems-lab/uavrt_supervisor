@@ -36,42 +36,62 @@ TBD
 
 ### Dependencies 
 
-- Python
+Installation instructions will be supplied for Ubuntu 20.04 and macOS. 
 
-Python 3.8 is the minimum requirement, while a Python 3.9 enviroment is required for MATLAB ROS 2 support. 
+- The standard Debian/Ubuntu package manager `apt` will be used for installation purposes on Linux
+- Homebrew will be used for installation purposes on macOS
 
-- CMake
+#### Python
 
-Cmake 3.16.3 is the minimum requirement. 
+Python 3.8 is the minimum requirement:
+
+While a Python 3.9 enviroment is required for MATLAB ROS 2 support: 
+
+#### CMake
+
+Cmake 3.16.3+: 
+
+Ubuntu
 
 ```
-sudo apt update
+sudo apt update && sudo apt upgrade
 sudo apt install cmake
+cmake --version
 ```
 
-C++ Compilers
+macOS
 
-- Linux — GNU Compiler Collection (GCC) 6.3+
+#### C++ Compilers
+
+Linux — GNU Compiler Collection (GCC) 6.3+
 
 ```
-sudo apt update
+sudo apt update && sudo apt upgrade
 sudo apt install build-essential
 sudo apt-get install manpages-dev
 gcc --version
 ```
 
-- macOS — Xcode 10+
+macOS — Xcode 10+
+
+#### ROS 2
 
 This codebase supports the Foxy Fitzroy and Galactic Geochelone distributions of ROS 2: 
 
 - [ROS 2 Foxy Fitzroy](https://docs.ros.org/en/foxy/Releases/Release-Foxy-Fitzroy.html)
 - [ROS 2 Galactic Geochelone](https://docs.ros.org/en/foxy/Releases/Release-Galactic-Geochelone.html)
 
-MAVLink messaging: 
+#### MAVLink and Pymavlink
+
+This codebase supports [MAVLink V2](https://mavlink.io/en/guide/mavlink_2.html). 
+
+We use Pymavlink to use the MAVLink protocol. 
 
 - [Pymavlink](https://github.com/ArduPilot/pymavlink)
 
-The following software is recommended but it is not required: 
+#### MATLAB
+
+MATLAB 2022a+ is recommended but it is not required: 
 
 - [MATLAB R2022a](https://www.mathworks.com/support/requirements/matlab-system-requirements.html)
 
