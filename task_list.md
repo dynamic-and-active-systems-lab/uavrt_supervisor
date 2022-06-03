@@ -32,7 +32,7 @@ Actual time to implement: 3 weeks
 Expected time to implement: 1-2 weeks 
 Actual time to implement: 
 
-Note: This is purely contingent on whether we have decided on pymavlink or mavsdk. 
+Note: This is contingent on whether we have decided on Pymavlink or MAVSDK. 
 
 #### 3. Build radio control system on supervisor node
 
@@ -42,42 +42,52 @@ Note: This is purely contingent on whether we have decided on pymavlink or mavsd
 
 - [ ] Start subprocesses 
   - [ ] Start channelizer process
-  - [ ] Start airspy_rx -> netcat process (channelizer must be running)
-  - [ ] Start detectors using configuration files
+  - [ ] Start airspy_rx -> netcat process 
+  - [ ] Start detectors processes using configuration files
 
 - [ ] Send Start/Stop/Pause/Unpause commands to subprocesses via UDP
   - [ ] Send commands to channelizer 
   - [ ] Send commands to detector 
 
-Expected time to implement: ? weeks 
+Note: This is contingent on we decide to connect to remote systems.  
+
+Expected time to implement: 1-2 weeks 
 Actual time to implement: 
 
 #### 4. Full demo of supervisor node (minimum number of processes and tags)
 
-- [ ] Super
-- [ ] Waits for command via Mavlink
+- [ ] Launch supervisor_node 
+- [ ] Start up publishers/service(s)
+  - [ ] Establish connection with Pixhawk/SITL
+- [ ] Waits for command via Mavlink (Start/Stop/Pause/Unpause)
 - [ ] On start
-
-  
+  - [ ] Builds file structure for archive
+  - [ ] Receives tag priori via Mavlink
+  - [ ] Calculates radio settings (f_cent, n_channels)
+  - [ ] Writes detector config files
   - [ ] Idle start channelizer
   - [ ] Idle start all detectors
-
+  - [ ] Start airspy_rx -> netcat process (channelizer must be running)
   - [ ] Send run command to all detectors 
   - [ ] Send run command to channelizer
-  - [ ] Publishing radio system heartbeat messages via ML
+  - [ ] Publishing radio system heartbeat messages via Mavlink
 - [ ] On pause
   - [ ] Send pause command to channelizer
+  - [ ] Send pause command to detector(s)
 - [ ] On unpause
   - [ ] Send run command to channelizer
+  - [ ] Send run command to detector(s)
 - [ ] On stop
-  - [ ]  Send kill commands to all detectors and channelizer (order doesn’t matter)
+  - [ ] Send kill commands to all detectors and channelizer (order doesn’t matter)
 
 Expected time to implement: 1 week
 Actual time to implement: 
 
+Note: Please suggest more requirements to satisfy for a complete test. 
+
 5. Uncategorized
 
-- [ ] Spend time optimizing and cleaning up current codebase 
+- [ ] Spend time optimizing and cleaning up current codebase prior to Phase 2
 
 ### Phase 2
 
@@ -88,7 +98,7 @@ TBD. I'd like to get more done with Phase 1 before laying out the tasks for Phas
 ### June 3rd 2022 
 
 - Demo 
-- Are we using pymavlink or mavsdk? 
+- Are we using Pymavlink or MAVSDK? 
 - Should I move to subprocesses or debug message receiving/transmitting? 
 - [Python subprocess library](https://docs.python.org/3/library/subprocess.html) 
 - [Python subprocess remote start/login](https://programmer.group/experience-sharing-the-best-practice-of-remote-login-server-with-python.html)
@@ -99,4 +109,4 @@ TBD. I'd like to get more done with Phase 1 before laying out the tasks for Phas
     - I'm certain that it will work, but there is limited documentation on the functionality despite being supported by an official python library 
   - Biggest concern: We could never have a distributed system unless we have an established network. How else would you start a remote subprocess? 
  - Meeting with Don? 
- - Paul: Can I talk to you for 5 minutes after the meeting? 
+ - Paul: Can we meet for 5 minutes after today's meeting? 
