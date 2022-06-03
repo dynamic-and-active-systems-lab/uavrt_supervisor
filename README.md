@@ -39,13 +39,44 @@ TBD
 Installation instructions will be supplied for Ubuntu 20.04 and macOS. 
 
 - The standard Debian/Ubuntu package manager `apt` will be used for installation purposes on Linux
-- Homebrew will be used for installation purposes on macOS
+- [Homebrew](https://brew.sh/) will be used for installation purposes on macOS
 
 #### Python
 
 Python 3.8 is the minimum requirement:
 
+Ubuntu 
+
+```
+
+```
+
+
+macOS
+
+```
+brew update
+brew upgrade
+brew install python@3.8
+python --version
+```
+
 While a Python 3.9 enviroment is required for MATLAB ROS 2 support: 
+
+Ubuntu 
+
+```
+sudo apt update && sudo apt upgrade
+
+```
+macOS
+
+```
+brew update
+brew upgrade
+brew install python@3.9
+python --version
+```
 
 #### CMake
 
@@ -54,12 +85,19 @@ Cmake 3.16.3+:
 Ubuntu
 
 ```
-sudo apt update && sudo apt upgrade
+sudo apt update && sudo apt upgrade 
 sudo apt install cmake
 cmake --version
 ```
 
 macOS
+
+```
+brew update
+brew upgrade
+brew install cmake
+cmake --version
+```
 
 #### C++ Compilers
 
@@ -74,6 +112,11 @@ gcc --version
 
 macOS — Xcode 10+
 
+```
+brew update
+brew upgrade
+```
+
 #### ROS 2
 
 This codebase supports the Foxy Fitzroy and Galactic Geochelone distributions of ROS 2: 
@@ -85,7 +128,7 @@ This codebase supports the Foxy Fitzroy and Galactic Geochelone distributions of
 
 This codebase supports [MAVLink V2](https://mavlink.io/en/guide/mavlink_2.html). 
 
-We use Pymavlink to use the MAVLink protocol. 
+We use Pymavlink as a interface to the MAVLink protocol. 
 
 - [Pymavlink](https://github.com/ArduPilot/pymavlink)
 
@@ -97,6 +140,19 @@ MATLAB 2022a+ is recommended but it is not required:
 
 # Installaton
 
+For installing this package, it is required that you have a functional ROS 2 workspace. Below is a set of instructions to create a ROS2 workspace. 
+These instructions are applicable to both Linux and macOS. However, the instructions will fail unless the previous dependencies have been met. 
+
+- For more details on creating a workspace using Foxy or Galactic. 
+
 ### Linux
 
+
+
+### macOS
+
+TBD
+
 # License 
+
+This codebase is released under the GNU Lesser General Public License v3 or later.
