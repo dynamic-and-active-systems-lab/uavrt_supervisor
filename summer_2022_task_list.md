@@ -7,7 +7,7 @@
 - [x] Receives telemetry data from Pixhawk at 2Hz
 - [x] Publishes /vehiclePose topic to ros2 network as geometry_msg/PoseStamped message type
 - [ ] Records received telemetry to file
-- [ ] Provides /getPoseStamped service that provides the pose of the vehicle at the time sent as part of the request
+- [x] Provides /getPoseStamped service that provides the pose of the vehicle at the time sent as part of the request
 
 Expected time to implement: 2 weeks
 
