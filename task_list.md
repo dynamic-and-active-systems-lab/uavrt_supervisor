@@ -30,10 +30,14 @@
 - [ ] On stop
   - [ ]  Send kill commands to all detectors and channelizer (order doesn’t matter)
 
-3. Build ros2mavlink node
+3. Build transmission node
 
 - [ ] Subscribes to the /pulsePose topic
 - [ ] Repackages /pulsePose messages as ML debug messages and transmits to Pixhawk 
+
+### Phase 2
+
+
 
 ## Revisions 
 
@@ -43,4 +47,12 @@
 
 ### June 3rd 2022 
 
-- [Python subprocess library](https://docs.python.org/3/library/subprocess.html) supports 
+- Are we using pymavlink or mavsdk? 
+- [Python subprocess library](https://docs.python.org/3/library/subprocess.html) 
+- [Python subprocess remote start/login](https://programmer.group/experience-sharing-the-best-practice-of-remote-login-server-with-python.html)
+  - The subprocess library supports opening up ssh connections to other machines in order to start processes on those machines 
+  - This would only work if the machine that is being ssh'ed into has the required dependices installed, but this is a reasonable requirement 
+  - Output from the remote process can be sent back to the local parent process
+  - Note: I could not find better documentation of this feature than the link above;
+    - I'm certain that it will work, but there is limited documentation on the functionality despite being supported by an official python library 
+ - Meeting with Don? 
