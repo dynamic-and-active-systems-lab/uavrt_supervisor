@@ -10,10 +10,10 @@ https://docs.ros.org/en/humble/Tutorials.html
 #
 # This Stackoverflow question/answer helped me figured out this issue:
 # https://stackoverflow.com/a/58504978
-from data_streaming.supervisor_publishers import *
-from data_streaming.supervisor_subscribers import *
-from data_streaming.supervisor_servicers import *
-from data_streaming.supervisor_bags import *
+from supervisor.supervisor_publishers import *
+from supervisor.supervisor_subscribers import *
+from supervisor.supervisor_servicers import *
+from supervisor.supervisor_bags import *
 
 # Import rclpy so its classes can be used.
 # https://docs.ros2.org/latest/api/rclpy/index.html
@@ -43,7 +43,7 @@ from rclpy.logging import LoggingSeverity
 
 
 # TODO: Create launch logging configuration file
-# UNIQUE_LOG_BASE_PATH = '~/uavrt_ws/src/data_streaming/log'
+# UNIQUE_LOG_BASE_PATH = '~/uavrt_ws/src/supervisor/log'
 # TODO: Need to add unit testing eventually.
 # TODO: Not sure how make it so import/from statments are all in one file/
 # organized/centralized - email Don

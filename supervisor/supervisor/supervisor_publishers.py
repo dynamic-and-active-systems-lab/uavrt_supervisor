@@ -5,9 +5,9 @@ Based on the example code from these sites:
 https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscriber.html
 '''
 
-from data_streaming.mavlink_helper import *
-from data_streaming.supervisor_bags import *
-from data_streaming.supervisor_servicers import *
+from supervisor.mavlink_helper import *
+from supervisor.supervisor_bags import *
+from supervisor.supervisor_servicers import *
 
 # Import Parameter class so we can create Paramaters.
 # Not using this functioanlity at the moment since it doesn't seem to add much

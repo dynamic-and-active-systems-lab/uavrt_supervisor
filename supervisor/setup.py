@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'data_streaming'
+package_name = 'supervisor'
 
 setup(
     name=package_name,
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'supervisor = data_streaming.supervisor:main'
+            'supervisor_node = supervisor.supervisor:main'
         ],
     },
 )

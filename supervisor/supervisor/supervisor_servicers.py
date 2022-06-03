@@ -5,8 +5,8 @@ Based on the example code from these sites:
 https://docs.ros.org/en/humble/Tutorials/Actions/Writing-a-Py-Action-Server-Client.html
 '''
 
-from data_streaming.supervisor import *
-from data_streaming.supervisor_publishers import *
+from supervisor.supervisor import *
+from supervisor.supervisor_publishers import *
 
 # Using the custome GetPose service in order to fufill request from client.
 # https://docs.ros.org/en/humble/Tutorials/Custom-ROS2-Interfaces.html
