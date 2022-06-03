@@ -10,6 +10,7 @@
 - [ ] Provides /getPoseStamped service that provides the pose of the vehicle at the time sent as part of the request
 
 Expected time to implement: 2 weeks
+
 Actual time to implement: 3 weeks 
 
 #### 2. Build transmission and receiving system on supervisor node
@@ -30,6 +31,7 @@ Actual time to implement: 3 weeks
 - [ ] Calculates radio settings (f_cent, n_channels)
 
 Expected time to implement: 1-2 weeks 
+
 Actual time to implement: 
 
 Note: This is contingent on whether we have decided on Pymavlink or MAVSDK. 
@@ -52,6 +54,7 @@ Note: This is contingent on whether we have decided on Pymavlink or MAVSDK.
 Note: This is contingent on we decide to connect to remote systems.  
 
 Expected time to implement: 1-2 weeks 
+
 Actual time to implement: 
 
 #### 4. Full demo of supervisor node (specify number of processes and tags)
@@ -81,6 +84,7 @@ Actual time to implement:
   - [ ] Send kill commands to all detectors and channelizer (order doesn’t matter)
 
 Expected time to implement: 1 week
+
 Actual time to implement: 
 
 Note: Please suggest more requirements to satisfy for a complete test. 
