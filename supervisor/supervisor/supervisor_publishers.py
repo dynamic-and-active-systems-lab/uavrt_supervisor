@@ -5,7 +5,7 @@ Based on the example code from these sites:
 https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscriber.html
 '''
 
-from supervisor.mavlink_helper import *
+from supervisor.mavlink_utilities import *
 
 from std_msgs.msg import *
 from geometry_msgs.msg import *
@@ -61,13 +61,13 @@ def heartbeatMonitor(supervisorNode):
 
     if status.message == 'Dead':
         logger.info("Attempting to reestablish connection.")
-        supervisorNode.connection = establishMavlinkConnection(logger)
+        supervisorNode.connection = establishMavlinkConnection(supervisorNode)
 
 
 def telemetryMonitor(supervisorNode):
     logger = supervisorNode.get_logger()
 
-    if supervisorNode.connection != None and checkGPS(supervisorNode.connection, logger) != None:
+    if supervisorNode.connection != None and checkGPS(supervisorNode) != None:
         header = Header()
         poseStamped = PoseStamped()
         pose = Pose()
@@ -82,14 +82,14 @@ def telemetryMonitor(supervisorNode):
         header.frame_id = "telemetryData"
         header.stamp = currentTime.to_msg()
 
-        position.x = float(getLongitude(supervisorNode.connection, logger))
-        position.y = float(getLatitude(supervisorNode.connection, logger))
-        position.z = float(getAltitude(supervisorNode.connection, logger))
+        position.x = float(getLongitude(supervisorNode))
+        position.y = float(getLatitude(supervisorNode))
+        position.z = float(getAltitude(supervisorNode))
 
-        orientation.x = float(getLongitude(supervisorNode.connection, logger))
-        orientation.y = float(getLatitude(supervisorNode.connection, logger))
-        orientation.z = float(getAltitude(supervisorNode.connection, logger))
-        orientation.w = float(getAltitude(supervisorNode.connection, logger))
+        orientation.x = float(getLongitude(supervisorNode))
+        orientation.y = float(getLatitude(supervisorNode))
+        orientation.z = float(getAltitude(supervisorNode))
+        orientation.w = float(getAltitude(supervisorNode))
 
         pose.position = position
         pose.orientation = orientation

@@ -113,6 +113,8 @@ PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 # of callbacks and log messages.
 # TODO: Figure out serial reset
 # "command that would reset the serial port if I unplugged and then replugged in usb"
+# TODO: I'm not sure why checkHeartbeat() works with connection but not
+# supervisorNode.connection
 
 
 class Supervisor(Node):

@@ -38,10 +38,11 @@ UDP_IP_PORT = 'udp:0.0.0.0:14540'
 # UDP port than it is to check for a valid serial file descriptor.
 #
 # Note: If a serial connection is established, a UDP connection will not be
-# attempted. 
+# attempted.
 
 
-def establishMavlinkConnection(logger):
+def establishMavlinkConnection(supervisorNode):
+    logger = supervisorNode.get_logger()
 
     # Attempt to establish a serial connection with a Pixhawk
     # This sets the system and component ID of remote system for the serial link
@@ -119,21 +120,21 @@ def checkHeartbeat(connection, logger):
         return None
 
 
-def checkGPS(connection, logger):
+def checkGPS(supervisorNode):
     # Check if there is GLOBAL_POSITION_INT present in the MAVLink data
     try:
-        gps = connection.messages['GLOBAL_POSITION_INT']
-        logger.info("GPS satellite(s) locked.")
+        gps = supervisorNode.connection.messages['GLOBAL_POSITION_INT']
+        supervisorNode.get_logger().info("GPS satellite(s) locked.")
         return gps
     except KeyError as instance:
-        logger.warn("No GPS satellite(s) found!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("No GPS satellite(s) found!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
     except AttributeError as instance:
-        logger.warn("Connection does not exist!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Connection does not exist!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
 
 
@@ -148,78 +149,78 @@ def checkGPS(connection, logger):
 # and ATTITUDE_QUATERNION ( #31 ) for quaternion data (x, y, z, w)
 #
 # TODO: How do I catch BAD_DATA? Should I make a seperate except clause for it?
-def getLongitude(connection, logger):
+def getLongitude(supervisorNode):
     try:
-        longitude = connection.messages['GLOBAL_POSITION_INT'].lon
+        longitude = supervisorNode.connection.messages['GLOBAL_POSITION_INT'].lon
         return longitude
     except KeyError as instance:
-        logger.warn("Unable to retrieve longitude!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Unable to retrieve longitude!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
 
 
-def getLatitude(connection, logger):
+def getLatitude(supervisorNode):
     try:
-        latitude = connection.messages['GLOBAL_POSITION_INT'].lat
+        latitude = supervisorNode.connection.messages['GLOBAL_POSITION_INT'].lat
         return latitude
     except KeyError as instance:
-        logger.warn("Unable to retrieve latitude!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Unable to retrieve latitude!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
 
 
-def getAltitude(connection, logger):
+def getAltitude(supervisorNode):
     try:
-        altitude = connection.messages['GLOBAL_POSITION_INT'].alt
+        altitude = supervisorNode.connection.messages['GLOBAL_POSITION_INT'].alt
         return altitude
     except KeyError as instance:
-        logger.warn("Unable to retrieve altitude!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Unable to retrieve altitude!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
 
 
-def getQuaternionX(connection, logger):
+def getQuaternionX(supervisorNode):
     try:
-        quaternionX = connection.messages['ATTITUDE_QUATERNION'].q2
+        quaternionX = supervisorNode.connection.messages['ATTITUDE_QUATERNION'].q2
         return quaternionX
     except KeyError as instance:
-        logger.warn("Unable to retrieve quaternion X!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Unable to retrieve quaternion X!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
 
 
-def getQuaternionY(connection, logger):
+def getQuaternionY(supervisorNode):
     try:
-        quaternionY = connection.messages['ATTITUDE_QUATERNION'].q3
+        quaternionY = supervisorNode.connection.messages['ATTITUDE_QUATERNION'].q3
         return quaternionY
     except KeyError as instance:
-        logger.warn("Unable to retrieve quaternion Y!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Unable to retrieve quaternion Y!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
 
 
-def getQuaternionZ(connection, logger):
+def getQuaternionZ(supervisorNode):
     try:
-        quaternionZ = connection.messages['ATTITUDE_QUATERNION'].q4
+        quaternionZ = supervisorNode.connection.messages['ATTITUDE_QUATERNION'].q4
         return quaternionZ
     except KeyError as instance:
-        logger.warn("Unable to retrieve quaternion Z!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Unable to retrieve quaternion Z!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None
 
 
-def getQuaternionW(connection, logger):
+def getQuaternionW(supervisorNode):
     try:
-        quaternionW = connection.messages['ATTITUDE_QUATERNION'].q1
+        quaternionW = supervisorNode.connection.messages['ATTITUDE_QUATERNION'].q1
         return quaternionW
     except KeyError as instance:
-        logger.warn("Unable to retrieve quaternion W!")
-        logger.warn("Type: {}".format(type(instance)))
-        logger.warn("Instance: {}".format(instance))
+        supervisorNode.get_logger().warn("Unable to retrieve quaternion W!")
+        supervisorNode.get_logger().warn("Type: {}".format(type(instance)))
+        supervisorNode.get_logger().warn("Instance: {}".format(instance))
         return None

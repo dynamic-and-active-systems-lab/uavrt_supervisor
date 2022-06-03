@@ -14,8 +14,6 @@ from scipy.interpolate import *
 
 
 def searchTelemetryArrays(supervisorNode, timestamp, pose):
-    logger = supervisorNode.get_logger()
-
     position = Point()
     orientation = Quaternion()
 
@@ -47,6 +45,6 @@ def searchTelemetryArrays(supervisorNode, timestamp, pose):
     pose.position = position
     pose.orientation = orientation
 
-    logger.info("/getPose service request has been fufilled.")
+    supervisorNode.get_logger().info("/getPose service request has been fufilled.")
 
     return pose
