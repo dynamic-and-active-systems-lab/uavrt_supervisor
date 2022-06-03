@@ -1,4 +1,4 @@
-# Task List for the Summer '22 Term 
+# Task List for the Summer 2022 Term 
 
 ### Phase 1:
 
