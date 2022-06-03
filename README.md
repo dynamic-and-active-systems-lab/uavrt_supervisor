@@ -37,6 +37,7 @@ TBD
 ### Hardware
 
 - Pixhawk 4
+- Airspy HF+ Discovery 
 - Computer computer
     - This project was developed and deployed on the [UDOO x86 II Ultra](https://shop.udoo.org/en/udoo-x86-ii-ultra.html)
 
@@ -112,7 +113,7 @@ cmake --version
 
 #### C++ Compilers
 
-- Linux — GNU Compiler Collection (GCC) 6.3+
+- Ubuntu — GNU Compiler Collection (GCC) 6.3+
 
 ```
 sudo apt update && sudo apt upgrade
@@ -129,6 +130,29 @@ To install Command Line Utilities only:
 xcode-select --install
 gcc --version
 ```
+
+#### Netcat 
+
+Ubuntu 
+
+```
+sudo apt update && sudo apt upgrade
+apt-get install netcat
+dpkg -L netcat
+```
+
+macOS
+
+```
+brew update
+brew upgrade
+brew install netcat
+netcat -h
+```
+
+#### airspyhf_rx
+
+TBD. The instructions I wrote for this are in the [airspy_channelizer repo](https://github.com/dynamic-and-active-systems-lab/airspyhf_channelize#installing-airspyhf_rx). Do I point to that, copy or move them over here? I'd like to put them all in one place so I could edit them. Ultimately, the instructions for everything should be on the DASL site. 
 
 #### ROS 2
 
