@@ -40,16 +40,16 @@ def searchTelemetryArrays(supervisorNode, timestamp, pose):
     position = Point()
     orientation = Quaternion()
 
-    arrayCurrentTime = supervisorNode.arrayCurrentTime
+    currentTimeArray = supervisorNode.currentTimeArray
     positionArray = supervisorNode.positionArray
     orientationArray = supervisorNode.orientationArray
 
     timestampSeconds = timestamp.sec + (timestamp.nanosec / NANOSECOND)
 
-    positonFunction = interp1d(supervisorNode.arrayCurrentTime,
+    positonFunction = interp1d(supervisorNode.currentTimeArray,
                                supervisorNode.positionArray)
 
-    orientationFunction = interp1d(supervisorNode.arrayCurrentTime,
+    orientationFunction = interp1d(supervisorNode.currentTimeArray,
                                    supervisorNode.orientationArray)
 
     interpolatedPositions = positonFunction(timestampSeconds)

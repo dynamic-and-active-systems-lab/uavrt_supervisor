@@ -60,28 +60,72 @@ class Supervisor(Node):
 
         logger = self.get_logger()
 
-        logger.set_level(LoggingSeverity.INFO)
         logger.info("Supervisor node has been created.")
+
+        logger.set_level(LoggingSeverity.INFO)
         logger.info("Logging severity has been set to info.")
 
-        self.heartbeatWatchdog = 0
         self.connection = None
+        self.heartbeatWatchdog = 0
 
-        # Make a 1 by 1 array
-        self.arrayCurrentTime = np.zeros((1,1), dtype=int)
-        # Make a 3 by 1 array
-        self.positionArray = np.zeros((3,1), dtype=np.float64)
-        # Make a 4 by 1 array
-        self.orientationArray = np.zeros((4,1), dtype=np.float64)
+        # Make a 1 by 1 array filled with 0's of type int
+        # [[0.]]
+        self.currentTimeArray = np.zeros((1, 1), dtype=int)
+
+        # Make a 3 by 1 array filled with 0's of type float64
+        # [[0.]
+        #  [0.]
+        #  [0.]]
+        self.positionArray = np.zeros((3, 1), dtype=np.float64)
+
+        # Make a 4 by 1 array filled with 0's of type float64
+        # [[0.]
+        #  [0.]
+        #  [0.]
+        #  [0.]]
+        self.orientationArray = np.zeros((4, 1), dtype=np.float64)
 
         # Heartbeat status monitor
-        createHeatbeatPublisher(self)
+        self.createHeartbeatPublisher(logger)
 
         # Telemetry monitor
-        createTelemetryPublisher(self)
+        self.createTelemetryPublisher(logger)
 
         # /getPose service
         createGetPoseServicer(self)
+
+    def createHeartbeatPublisher(self, logger):
+        # Format: Msg type, topic, queue size
+        self.heartbeatPublisher = self.create_publisher(
+            DiagnosticArray,
+            '/heartbeatStatus',
+            QUEUE_SIZE)
+        self.timer = self.create_timer(
+            PUBLISH_HEARTBEAT_STATUS_TIME_PERIOD,
+            partial(heartbeatMonitor,
+                    self,
+                    self.heartbeatPublisher,
+                    self.get_logger(),
+                    self.connection,
+                    self.heartbeatWatchdog))
+        logger.info("Heartbeat monitor is now publishing.")
+
+    def createTelemetryPublisher(self, logger):
+        self.telemetryPublisher = self.create_publisher(
+            PoseStamped,
+            '/antennaPose',
+            QUEUE_SIZE)
+        self.timer = self.create_timer(
+            PUBLISH_TELEMETRY_DATA_TIME_PERIOD,
+            partial(telemetryMonitor,
+                    self,
+                    self.telemetryPublisher,
+                    self.get_logger(),
+                    self.connection,
+                    self.currentTimeArray,
+                    self.positionArray,
+                    self.orientationArray))
+        logger.info("Telemetry monitor is now publishing.")
 
 
 def main(args=None):

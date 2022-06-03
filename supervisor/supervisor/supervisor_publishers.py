@@ -74,23 +74,11 @@ MISSED_HEARTBEAT_LIMIT = 5
 PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 
 
-def createHeatbeatPublisher(supervisorNode):
-    logger = supervisorNode.get_logger()
-
-    # Format: Msg type, topic, queue size
-    supervisorNode.heartbeatPublisher = supervisorNode.create_publisher(
-        DiagnosticArray,
-        '/heartbeatStatus',
-        QUEUE_SIZE)
-    supervisorNode.timer = supervisorNode.create_timer(
-        PUBLISH_HEARTBEAT_STATUS_TIME_PERIOD,
-        partial(heartbeatMonitor, supervisorNode))
-    logger.info("Heartbeat monitor is now publishing.")
-
-
-def heartbeatMonitor(supervisorNode):
-    logger = supervisorNode.get_logger()
-    heartbeatWatchdog = supervisorNode.heartbeatWatchdog
+def heartbeatMonitor(supervisorNode,
+                     heartbeatPublisher,
+                     logger,
+                     connection,
+                     heartbeatWatchdog):
 
     statusArray = DiagnosticArray()
     status = DiagnosticStatus()
@@ -107,21 +95,19 @@ def heartbeatMonitor(supervisorNode):
     value.key = 'Number of missed heartbeats'
 
     if currentStatus != None:
-        # Call by reference and call by value issue here
-        # Updating the Node's heartbeatWatchdog and not simply the value
-        # in this function
         supervisorNode.heartbeatWatchdog = MISSED_HEARTBEAT_LIMIT
         status.level = b'0'
         status.message = 'Alive'
-    elif currentStatus == None and heartbeatWatchdog > 0:
+    elif currentStatus == None and supervisorNode.heartbeatWatchdog > 0:
         supervisorNode.heartbeatWatchdog -= 1
         status.level = b'1'
         status.message = 'Unknown'
-    elif currentStatus == None and heartbeatWatchdog == 0:
+    elif currentStatus == None and supervisorNode.heartbeatWatchdog == 0:
         status.level = b'2'
         status.message = 'Dead'
 
-    value.value = ''.format(MISSED_HEARTBEAT_LIMIT - heartbeatWatchdog)
+    value.value = ''.format(MISSED_HEARTBEAT_LIMIT -
+                            supervisorNode.heartbeatWatchdog)
 
     logger.info("Current heartbeat status: {}".format(status.message))
 
@@ -130,29 +116,18 @@ def heartbeatMonitor(supervisorNode):
 
     supervisorNode.heartbeatPublisher.publish(statusArray)
 
-    # Note: This could be made into a subscriber to reinforce abstraction but
-    # it seems like overkill.
     if status.message == 'Dead':
         logger.info("Attempting to reestablish connection.")
         supervisorNode.connection = establishMavlinkConnection(logger)
 
 
-def createTelemetryPublisher(supervisorNode):
-    logger = supervisorNode.get_logger()
-
-    # Format: Msg type, topic, queue size
-    supervisorNode.telemetryDataPublisher = supervisorNode.create_publisher(
-        PoseStamped,
-        '/antennaPose',
-        QUEUE_SIZE)
-    supervisorNode.timer = supervisorNode.create_timer(
-        PUBLISH_TELEMETRY_DATA_TIME_PERIOD,
-        partial(telemetryMonitor, supervisorNode))
-    logger.info("Telemetry monitor is now publishing.")
-
-
-def telemetryMonitor(supervisorNode):
-    logger = supervisorNode.get_logger()
+def telemetryMonitor(supervisorNode,
+                     telemetryPublisher,
+                     logger,
+                     connection,
+                     currentTimeArray,
+                     positionArray,
+                     orientationArray):
 
     if supervisorNode.connection != None and checkGPS(supervisorNode.connection, logger) != None:
         header = Header()
@@ -162,7 +137,7 @@ def telemetryMonitor(supervisorNode):
         orientation = Quaternion()
 
         # We get the current time seperately since the value that is stored
-        # into the Node's time array needs to be in nanoseconds for
+        # into the Node's currentTimeArray array needs to be in nanoseconds for
         # interpolation
         currentTime = supervisorNode.get_clock().now()
 
@@ -184,31 +159,33 @@ def telemetryMonitor(supervisorNode):
         poseStamped.header = header
         poseStamped.pose = pose
 
-        supervisorNode.telemetryDataPublisher.publish(poseStamped)
+        supervisorNode.telemetryPublisher.publish(poseStamped)
 
         logger.info("Telemetry data has been successfully published.")
 
-        supervisorNode.arrayCurrentTime = np.append(
-            supervisorNode.arrayCurrentTime, currentTime.nanoseconds)
+        supervisorNode.currentTimeArray = np.append(
+            supervisorNode.currentTimeArray, currentTime.nanoseconds)
 
-        supervisorNode.positionArray = np.append(
-            supervisorNode.positionArray,
-            [[position.x], [position.y], [position.z]],
-            axis=1)
+        supervisorNode.positionArray = np.append(supervisorNode.positionArray,
+                                                 [[position.x], [position.y],
+                                                     [position.z]],
+                                                 axis=1)
 
-        supervisorNode.orientationArray = np.append(
-            supervisorNode.orientationArray,
-            [[orientation.x], [orientation.y], [orientation.z], [orientation.w]],
-            axis=1)
+        supervisorNode.orientationArray = np.append(supervisorNode.orientationArray,
+                                                    [[orientation.x], [orientation.y], [
+                                                        orientation.z], [orientation.w]],
+                                                    axis=1)
 
         logger.info("Telemetry data has been appended to telemetry arrays.")
 
-        if (supervisorNode.arrayCurrentTime.size) > 3:
-            currentTime = supervisorNode.get_clock().now().to_msg()
+        # FOR DEBUGGING
+        if (supervisorNode.currentTimeArray.size) > 3:
+            currentTimeDebug = supervisorNode.get_clock().now().to_msg()
 
             pose = Pose()
 
-            pose = searchTelemetryArrays(supervisorNode, currentTime, pose)
+            pose = searchTelemetryArrays(
+                supervisorNode, currentTimeDebug, pose)
     else:
         logger.warn("Unable to publish telemetry data!")
         logger.warn("Connection or GPS lock was not established!")
