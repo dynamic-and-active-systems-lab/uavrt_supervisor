@@ -193,6 +193,7 @@ Open up a terminal from within your Home directory and run the following command
 
 ```
 source /opt/ros/galactic/setup.bash
+# 'source ~/ros2_galactic/ros2-linux/setup.bash' run this command if the one above doesn't work
 mkdir -p ~/uavrt_ws/src
 cd ~/uavrt_ws/src
 git clone https://github.com/dynamic-and-active-systems-lab/UAVRT_supervise
