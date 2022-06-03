@@ -210,7 +210,7 @@ source /opt/ros/galactic/setup.bash
 If these commands didn't fail, then should you be able to run the `supervisor` package with the following command: 
 
 ```
-. install/local_setup.bash
+ros2 run data_streaming supervisor
 ```
 
 #### macOS
