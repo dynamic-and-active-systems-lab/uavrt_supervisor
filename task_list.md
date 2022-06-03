@@ -12,21 +12,29 @@
 Expected time to implement: 2 weeks
 Actual time to implement: 3 weeks 
 
-2. Build transmission system on supervisor node
+2. Build transmission/receiving system on supervisor node
 
 - [ ] Subscribes to the /pulsePose topic
-- [ ] Repackages /pulsePose messages as Mavlink debug messages and transmits to Pixhawk 
+  - [ ] Repackages /pulsePose messages as Mavlink debug messages and transmits to Pixhawk 
 
-- [ ] Recieve debug messages from 
+- [ ] Tramsmitting Pixhawk heartbeat messages to the Pixhawk
 
-- [ ] Spend time optimizing and cleaning up current codebase 
+- [ ] Recieve debug messages via Mavlink 
+  - [ ] Recieve commands via Mavlink 
+    - [ ] Process commands 
+  - [ ] Receives tag priori via Mavlink
 
-Expected time to implement: 1 week 
+- [ ] Builds file structure for archive
+  - [ ] Writes detector config files
+
+- [ ] Calculates radio settings (f_cent, n_channels)
+
+Expected time to implement: 1-2 weeks 
 Actual time to implement: 
 
 Note: This is purely contingent on whether we have decided on pymavlink or mavsdk. 
 
-3. Build radio system on supervisor node
+3. Build radio control system on supervisor node
 
 - [ ] Start subprocesses using the [Python subprocess library](https://docs.python.org/3/library/subprocess.html) 
   - [ ] Start subprocesses from different paths for configuration files 
@@ -35,19 +43,22 @@ Note: This is purely contingent on whether we have decided on pymavlink or mavsd
 - [ ] Start subprocesses 
   - [ ] Start channelizer process
   - [ ] Start airspy_rx -> netcat process (channelizer must be running)
+  - [ ] Start detectors using configuration files
 
 - [ ] Send Start/Stop/Pause/Unpause commands to subprocesses via UDP
   - [ ] Send commands to channelizer 
   - [ ] Send commands to detector 
 
-- [ ] R
+Expected time to implement: ? weeks 
+Actual time to implement: 
 
-- [ ] Waits for command via ML ()
+4. Full demo of supervisor node (minimum number of processes and tags)
+
+- [ ] Super
+- [ ] Waits for command via Mavlink
 - [ ] On start
-  - [ ] Builds file structure for archive
-  - [ ] Receives tag priori via ML
-  - [ ] Calculates radio settings (f_cent, n_channels)
-  - [ ] Writes detector config files
+
+  
   - [ ] Idle start channelizer
   - [ ] Idle start all detectors
 
@@ -61,17 +72,16 @@ Note: This is purely contingent on whether we have decided on pymavlink or mavsd
 - [ ] On stop
   - [ ]  Send kill commands to all detectors and channelizer (order doesn’t matter)
 
-Expected time to implement: ? weeks 
+Expected time to implement: 1 week
 Actual time to implement: 
+
+5. Uncategorized
+
+- [ ] Spend time optimizing and cleaning up current codebase 
 
 ### Phase 2
 
 TBD. I'd like to get more done with Phase 1 before laying out the tasks for Phase 2. 
-
-## Revisions 
-
-- The mavlink2ros and ros2mavlink nodes were merged into the supervisor node
-- I think the second step of Phase 1 should be figuring out the debug messages 
 
 # Meeting notes 
 
@@ -88,4 +98,4 @@ TBD. I'd like to get more done with Phase 1 before laying out the tasks for Phas
   - Note: I could not find better documentation of this feature than the link above;
     - I'm certain that it will work, but there is limited documentation on the functionality despite being supported by an official python library 
  - Meeting with Don? 
- - Paul: Can I talk to you for 5 minutes after the meeting? It's in regard to my CS 685 course and paper topic for my thesis. 
+ - Paul: Can I talk to you for 5 minutes after the meeting? 
