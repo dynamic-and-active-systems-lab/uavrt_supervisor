@@ -7,6 +7,7 @@ https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscri
 
 from data_streaming.mavlink_helper import *
 from data_streaming.supervisor_bags import *
+from data_streaming.supervisor_servicers import *
 
 # Import Parameter class so we can create Paramaters.
 # Not using this functioanlity at the moment since it doesn't seem to add much
@@ -55,12 +56,7 @@ from functools import partial
 # Note: Requires installing scipy - pip3 install numpy
 import numpy as np
 
-# Used to find the Pose object that corresponds to the timestamp passed into
-# the getPose service.
-# https://docs.scipy.org/doc/scipy/tutorial/general.html
-# https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
-# Note: Requires installing scipy - pip3 install scipy
-from scipy import interpolate
+
 
 # Queue size is a required QoS (quality of service) setting that limits the
 # amount of queued messages if a subscriber is not receiving them fast enough.
@@ -199,12 +195,31 @@ def telemetryMonitor(supervisorNode):
         # purposes. It doesn't have a home atm.
         # recordTelemetryData(supervisorNode, poseStamped)
 
-        print(header.stamp)
-        print(supervisorNode.get_clock().now())
+        supervisorNode.arrayCurrentTime = np.append(
+            supervisorNode.arrayCurrentTime, currentTime.nanoseconds)
 
-        np.append(supervisorNode.telemetryHeaderArray, currentTime.nanoseconds)
-        np.append(supervisorNode.telemetryPoseArray, pose)
+        supervisorNode.arrayPositionX = np.append(
+            supervisorNode.arrayPositionX, position.x)
+        supervisorNode.arrayPositionY = np.append(
+            supervisorNode.arrayPositionY, position.y)
+        supervisorNode.arrayPositionZ = np.append(
+            supervisorNode.arrayPositionZ, position.z)
 
+        supervisorNode.arrayQuaternionX = np.append(
+            supervisorNode.arrayQuaternionX, orientation.x)
+        supervisorNode.arrayQuaternionY = np.append(
+            supervisorNode.arrayQuaternionX, orientation.y)
+        supervisorNode.arrayQuaternionZ = np.append(
+            supervisorNode.arrayQuaternionX, orientation.z)
+        supervisorNode.arrayQuaternionW = np.append(
+            supervisorNode.arrayQuaternionX, orientation.w)
+
+        if (supervisorNode.arrayCurrentTime.size) > 3:
+            currentTime = supervisorNode.get_clock().now().to_msg()
+
+            pose = Pose()
+
+            pose = searchTelemetryArrays(supervisorNode, currentTime, pose)
     else:
         logger.warn("Unable to publish telemetry data!")
         logger.warn("Connection or GPS lock was not established!")

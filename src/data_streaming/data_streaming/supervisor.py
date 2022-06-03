@@ -46,7 +46,7 @@ from rclpy.logging import LoggingSeverity
 # UNIQUE_LOG_BASE_PATH = '~/uavrt_ws/src/data_streaming/log'
 # TODO: Need to add unit testing eventually.
 # TODO: Not sure how make it so import/from statments are all in one file/
-# organized/centralized.
+# organized/centralized - email Don
 # TODO: Organize everything into a callback_group to ensure the proper order
 # of callbacks and log messages.
 
@@ -66,11 +66,20 @@ class Supervisor(Node):
 
         self.heartbeatWatchdog = 0
         self.connection = None
+
         self.telemetryDirectoryName = None
         self.telemetryFileName = None
 
-        self.telemetryHeaderArray = np.zeros(0, dtype=int)
-        self.telemetryPoseArray = np.zeros(0, dtype=Pose)
+        self.arrayCurrentTime = np.zeros(0, dtype=int)
+
+        self.arrayPositionX = np.zeros(0, dtype=np.float64)
+        self.arrayPositionY = np.zeros(0, dtype=np.float64)
+        self.arrayPositionZ = np.zeros(0, dtype=np.float64)
+
+        self.arrayQuaternionX = np.zeros(0, dtype=np.float64)
+        self.arrayQuaterniony = np.zeros(0, dtype=np.float64)
+        self.arrayQuaternionZ = np.zeros(0, dtype=np.float64)
+        self.arrayQuaternionW = np.zeros(0, dtype=np.float64)
 
         # Heartbeat status monitor
         createHeatbeatPublisher(self)
@@ -87,7 +96,6 @@ class Supervisor(Node):
         # /getPose service
         createGetPoseServicer(self)
 
-        #searchTelemetryArrays(self, 1, 1)
 
 def main(args=None):
     rclpy.init(args=args)
