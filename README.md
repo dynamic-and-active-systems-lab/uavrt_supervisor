@@ -155,24 +155,44 @@ MATLAB 2022a+ is recommended but it is not required:
 
 For installing this package, it is required that you have a functional ROS 2 workspace. Below is a set of instructions to create a ROS2 workspace. These instructions will fail unless the previous dependencies have been met. 
 
+- These instructions were supplied from [ROS 2 documentation](https://docs.ros.org/). All credit for these instructions is theirs. 
 - For more details on creating a workspace using [Foxy](https://docs.ros.org/en/foxy/Tutorials/Workspace/Creating-A-Workspace.html) or [Galactic](https://docs.ros.org/en/galactic/Tutorials.html). 
 
 ### uavrt_ws
 
+**Note:** I will be supplying the instructions necessary to build a workspace within a ROS 2 Galactic enviroment. 
+
+I need to 100% confirm that the final version of the codebase can run on Foxy. Else galactic will be the required ROS 2 version. 
+
 #### Linux
 
-- Open up a terminal from within your Home directory. 
-- Run the following commands: 
+Open up a terminal from within your Home directory and run the following commands: 
+
 ```
-source /opt/ros/foxy/setup.bash
+source /opt/ros/galactic/setup.bash
 mkdir -p ~/uavrt_ws/src
 cd ~/uavrt_ws/src
-git clone https://github.com/ros/ros_tutorials.git -b foxy-devel
+git clone https://github.com/dynamic-and-active-systems-lab/UAVRT_supervise
+# cd if you're still in the ``src`` directory with the ``UAVRT_supervise`` clone
+cd ..
+rosdep install -i --from-path src --rosdistro foxy -y
+# Should return "All required rosdeps installed successfully"
+colcon build
+# "build  install  log  src" directories should exist in the workspace root (~/uavrt_ws) 
+source /opt/ros/galactic/setup.bash
+# 'source ~/ros2_galactic/ros2-linux/setup.bash' run this command if the one above doesn't work
+. install/local_setup.bash
+```
+
+If these commands didn't fail, then should you be able to run the `supervisor` package with the following command: 
+
+```
+. install/local_setup.bash
 ```
 
 #### macOS
 
-TBD
+TBD. Instructions are listed in the ROS 2 documentation but I have not gone through them. I'm leaving this section blank until I go through this installation process on a Mac running Mohave 10.4. 
 
 # License 
 
