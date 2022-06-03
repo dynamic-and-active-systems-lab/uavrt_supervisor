@@ -67,31 +67,18 @@ class Supervisor(Node):
         self.heartbeatWatchdog = 0
         self.connection = None
 
-        self.telemetryDirectoryName = None
-        self.telemetryFileName = None
-
-        self.arrayCurrentTime = np.zeros(0, dtype=int)
-
-        self.arrayPositionX = np.zeros(0, dtype=np.float64)
-        self.arrayPositionY = np.zeros(0, dtype=np.float64)
-        self.arrayPositionZ = np.zeros(0, dtype=np.float64)
-
-        self.arrayQuaternionX = np.zeros(0, dtype=np.float64)
-        self.arrayQuaterniony = np.zeros(0, dtype=np.float64)
-        self.arrayQuaternionZ = np.zeros(0, dtype=np.float64)
-        self.arrayQuaternionW = np.zeros(0, dtype=np.float64)
+        # Make a 1 by 1 array
+        self.arrayCurrentTime = np.zeros((1,1), dtype=int)
+        # Make a 3 by 1 array
+        self.positionArray = np.zeros((3,1), dtype=np.float64)
+        # Make a 4 by 1 array
+        self.orientationArray = np.zeros((4,1), dtype=np.float64)
 
         # Heartbeat status monitor
         createHeatbeatPublisher(self)
 
         # Telemetry monitor
         createTelemetryPublisher(self)
-
-        # Telemetry bag writer
-        # createTelemetryBagWriter(self)
-
-        # Telemetry bag reader
-        # createTelemetryBagReader(self)
 
         # /getPose service
         createGetPoseServicer(self)

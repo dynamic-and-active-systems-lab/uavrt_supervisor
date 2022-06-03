@@ -57,7 +57,6 @@ from functools import partial
 import numpy as np
 
 
-
 # Queue size is a required QoS (quality of service) setting that limits the
 # amount of queued messages if a subscriber is not receiving them fast enough.
 QUEUE_SIZE = 10
@@ -90,7 +89,6 @@ def createHeatbeatPublisher(supervisorNode):
 
 
 def heartbeatMonitor(supervisorNode):
-    connection = supervisorNode.connection
     logger = supervisorNode.get_logger()
     heartbeatWatchdog = supervisorNode.heartbeatWatchdog
 
@@ -98,7 +96,7 @@ def heartbeatMonitor(supervisorNode):
     status = DiagnosticStatus()
     value = KeyValue()
 
-    currentStatus = checkHeartbeat(connection, logger)
+    currentStatus = checkHeartbeat(supervisorNode.connection, logger)
 
     statusArray.header.frame_id = "heartbeatStatus"
     statusArray.header.stamp = supervisorNode.get_clock().now().to_msg()
@@ -154,10 +152,9 @@ def createTelemetryPublisher(supervisorNode):
 
 
 def telemetryMonitor(supervisorNode):
-    connection = supervisorNode.connection
     logger = supervisorNode.get_logger()
 
-    if connection != None and checkGPS(connection, logger) != None:
+    if supervisorNode.connection != None and checkGPS(supervisorNode.connection, logger) != None:
         header = Header()
         poseStamped = PoseStamped()
         pose = Pose()
@@ -172,14 +169,14 @@ def telemetryMonitor(supervisorNode):
         header.frame_id = "telemetryData"
         header.stamp = currentTime.to_msg()
 
-        position.x = float(getLongitude(connection, logger))
-        position.y = float(getLatitude(connection, logger))
-        position.z = float(getAltitude(connection, logger))
+        position.x = float(getLongitude(supervisorNode.connection, logger))
+        position.y = float(getLatitude(supervisorNode.connection, logger))
+        position.z = float(getAltitude(supervisorNode.connection, logger))
 
-        orientation.x = float(getLongitude(connection, logger))
-        orientation.y = float(getLatitude(connection, logger))
-        orientation.z = float(getAltitude(connection, logger))
-        orientation.w = float(getAltitude(connection, logger))
+        orientation.x = float(getLongitude(supervisorNode.connection, logger))
+        orientation.y = float(getLatitude(supervisorNode.connection, logger))
+        orientation.z = float(getAltitude(supervisorNode.connection, logger))
+        orientation.w = float(getAltitude(supervisorNode.connection, logger))
 
         pose.position = position
         pose.orientation = orientation
@@ -191,28 +188,20 @@ def telemetryMonitor(supervisorNode):
 
         logger.info("Telemetry data has been successfully published.")
 
-        # TODO: This shouldn't go here. I'm using this place for testing
-        # purposes. It doesn't have a home atm.
-        # recordTelemetryData(supervisorNode, poseStamped)
-
         supervisorNode.arrayCurrentTime = np.append(
             supervisorNode.arrayCurrentTime, currentTime.nanoseconds)
 
-        supervisorNode.arrayPositionX = np.append(
-            supervisorNode.arrayPositionX, position.x)
-        supervisorNode.arrayPositionY = np.append(
-            supervisorNode.arrayPositionY, position.y)
-        supervisorNode.arrayPositionZ = np.append(
-            supervisorNode.arrayPositionZ, position.z)
+        supervisorNode.positionArray = np.append(
+            supervisorNode.positionArray,
+            [[position.x], [position.y], [position.z]],
+            axis=1)
 
-        supervisorNode.arrayQuaternionX = np.append(
-            supervisorNode.arrayQuaternionX, orientation.x)
-        supervisorNode.arrayQuaternionY = np.append(
-            supervisorNode.arrayQuaternionX, orientation.y)
-        supervisorNode.arrayQuaternionZ = np.append(
-            supervisorNode.arrayQuaternionX, orientation.z)
-        supervisorNode.arrayQuaternionW = np.append(
-            supervisorNode.arrayQuaternionX, orientation.w)
+        supervisorNode.orientationArray = np.append(
+            supervisorNode.orientationArray,
+            [[orientation.x], [orientation.y], [orientation.z], [orientation.w]],
+            axis=1)
+
+        logger.info("Telemetry data has been appended to telemetry arrays.")
 
         if (supervisorNode.arrayCurrentTime.size) > 3:
             currentTime = supervisorNode.get_clock().now().to_msg()

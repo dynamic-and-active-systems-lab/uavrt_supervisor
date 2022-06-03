@@ -37,49 +37,36 @@ def createGetPoseServicer(supervisorNode):
 def searchTelemetryArrays(supervisorNode, timestamp, pose):
     logger = supervisorNode.get_logger()
 
-    logger.info("/getPose service has been requested.")
-
     position = Point()
     orientation = Quaternion()
 
-    currentTime = supervisorNode.arrayCurrentTime
-    positionX = supervisorNode.arrayPositionX
-    positionY = supervisorNode.arrayPositionY
-    positionZ = supervisorNode.arrayPositionZ
-
-    quaternionX = supervisorNode.arrayQuaternionX
-    quaternionY = supervisorNode.arrayQuaternionY
-    quaternionZ = supervisorNode.arrayQuaternionZ
-    quaternionW = supervisorNode.arrayQuaternionW
-
-    print(currentTime.size)
-    print(positionX.size)
-    print(positionY.size)
-    print(positionZ.size)
-    print(quaternionX.size)
-    print(quaternionY.size)
-    print(quaternionZ.size)
-    print(quaternionW.size)
+    arrayCurrentTime = supervisorNode.arrayCurrentTime
+    positionArray = supervisorNode.positionArray
+    orientationArray = supervisorNode.orientationArray
 
     timestampSeconds = timestamp.sec + (timestamp.nanosec / NANOSECOND)
 
-    funcPoseX = interp1d(currentTime,
-                         positionX)
-    funcPoseY = interp1d(currentTime,
-                         positionY)
-    funcPoseZ = interp1d(currentTime,
-                         positionZ)
+    positonFunction = interp1d(supervisorNode.arrayCurrentTime,
+                               supervisorNode.positionArray)
 
-    funcQuatX = interp1d(currentTime,
-                         quaternionX)
-    funcQuatY = interp1d(currentTime,
-                         quaternionY)
-    funcQuatZ = interp1d(currentTime,
-                         quaternionZ)
-    funcQuatW = interp1d(currentTime,
-                         quaternionW)
+    orientationFunction = interp1d(supervisorNode.arrayCurrentTime,
+                                   supervisorNode.orientationArray)
 
-    position.x = funcPoseX(timestampSeconds)
+    interpolatedPositions = positonFunction(timestampSeconds)
+
+    position.x = interpolatedPositions[0]
+    position.y = interpolatedPositions[1]
+    position.z = interpolatedPositions[2]
+
+    interpolatedOrientations = orientationFunction(timestampSeconds)
+
+    orientation.x = interpolatedOrientations[0]
+    orientation.y = interpolatedOrientations[1]
+    orientation.z = interpolatedOrientations[2]
+    orientation.w = interpolatedOrientations[3]
+
+    pose.position = position
+    pose.orientation = orientation
 
     logger.info("/getPose service request has been fufilled.")
 
