@@ -54,7 +54,7 @@ Note: This is contingent on we decide to connect to remote systems.
 Expected time to implement: 1-2 weeks 
 Actual time to implement: 
 
-#### 4. Full demo of supervisor node (minimum number of processes and tags)
+#### 4. Full demo of supervisor node (specify number of processes and tags)
 
 - [ ] Launch supervisor_node 
 - [ ] Start up publishers/service(s)
