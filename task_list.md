@@ -51,11 +51,11 @@ Note: This is contingent on whether we have decided on Pymavlink or MAVSDK.
   - [ ] Send commands to channelizer 
   - [ ] Send commands to detector 
 
-Note: This is contingent on we decide to connect to remote systems.  
-
 Expected time to implement: 1-2 weeks 
 
 Actual time to implement: 
+
+Note: This is contingent on we decide to connect to remote systems.  
 
 #### 4. Full demo of supervisor node (specify number of processes and tags)
 
