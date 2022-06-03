@@ -19,9 +19,6 @@ from pathlib import Path
 # https://github.com/pyserial/pyserial/blob/master/serial/serialutil.py
 from serial.serialutil import SerialException
 
-# Python doesn’t have built-in constant types.
-# By convention, Python uses a variable whose name contains all capital letters
-# to indicate that a variable is a constant.
 SERIAL_PATH = '/dev/ttyACM0'
 UDP_IP_PORT = 'udp:0.0.0.0:14540'
 
@@ -39,9 +36,10 @@ UDP_IP_PORT = 'udp:0.0.0.0:14540'
 # If not, I check if the UDP connection is alive.
 # I do it in this order since it is more difficult to scan for an open
 # UDP port than it is to check for a valid serial file descriptor.
+#
+# Note: If a serial connection is established, a UDP connection will not be
+# attempted. 
 
-# TODO: Figure out serial reset
-# "command that would reset the serial port if I unplugged and then replugged in usb"
 
 def establishMavlinkConnection(logger):
 
@@ -129,6 +127,11 @@ def checkGPS(connection, logger):
         return gps
     except KeyError as instance:
         logger.warn("No GPS satellite(s) found!")
+        logger.warn("Type: {}".format(type(instance)))
+        logger.warn("Instance: {}".format(instance))
+        return None
+    except AttributeError as instance:
+        logger.warn("Connection does not exist!")
         logger.warn("Type: {}".format(type(instance)))
         logger.warn("Instance: {}".format(instance))
         return None

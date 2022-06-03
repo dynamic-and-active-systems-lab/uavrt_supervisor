@@ -6,79 +6,22 @@ https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscri
 '''
 
 from supervisor.mavlink_helper import *
-from supervisor.supervisor_bags import *
-from supervisor.supervisor_servicers import *
 
-# Import Parameter class so we can create Paramaters.
-# Not using this functioanlity at the moment since it doesn't seem to add much
-# utility to the uavrt_ws.
-# https://docs.ros.org/en/humble/Tutorials/Using-Parameters-In-A-Class-Python.html
-# https://docs.ros2.org/latest/api/rclpy/api/parameters.html
-# https://roboticsbackend.com/rclpy-params-tutorial-get-set-ros2-params-with-python/
-# from rclpy.parameter import Parameter
-
-# A set of packages which contain common interface files (.msg and .srv) for ROS2:
-# https://github.com/ros2/common_interfaces/tree/master
-#
-# Standard messages for ROS2.
-# Necessary for Header type messages.
-# https://github.com/ros2/common_interfaces/tree/master/std_msgs/msg
 from std_msgs.msg import *
-# Import the built-in Geometry message type that the node uses to structure
-# the telemetry data that it publishes on the /atennapPose topic.
-# Allows for /getPose service call as well.
-# https://github.com/ros2/common_interfaces/tree/master/geometry_msgs/msg
 from geometry_msgs.msg import *
-# Import the built-in Diagnostic messages that the node uses to timestamp and
-# structure heartbeat status messages that it publishes on the /heartbeatStatus
-# topic.
-# https://github.com/ros2/common_interfaces/tree/master/diagnostic_msgs
-# http://wiki.ros.org/diagnostics/Tutorials/Creating%20a%20Diagnostic%20Analyzer#Generating_Diagnostics_Input
 from diagnostic_msgs.msg import *
 
-# I made 3 files: supervisor_publishers, supervisor_subscribers,
-# and supervisor_servicers.
-# These files house ROS2 runctionality of the Supervisor Node.
-# It's not advertised on ROS2's site/wiki that you can split the
-# publisher/subscriber callbacks from the node, but it's not taboo either.
-# I feel it makes the codebase much easier to follow when the functions are in
-# separate files.
-#
-# In order to do this, you need to either use partial() or lambda for the
-# callbacks.
-# https://discourse.ros.org/t/callback-args-in-ros2/4727/2
-# https://docs.python.org/3/library/functools.html
-from functools import partial
-
-# For array management; storing header information from PoseStamped objects
-# as well as the Pose portion of the objects.
-# https://numpy.org/doc/stable/user/quickstart.html
-# Note: Requires installing scipy - pip3 install numpy
 import numpy as np
-
-
-# Queue size is a required QoS (quality of service) setting that limits the
-# amount of queued messages if a subscriber is not receiving them fast enough.
-QUEUE_SIZE = 10
 
 # Heartbeat unique string for heartbeatStatus messages.
 # Hex(heartbeat)
 HEARTBEAT_ID = '776f7264'
-# Rate at which heartbeat status messages will be checked and published.
-# Seconds
-PUBLISH_HEARTBEAT_STATUS_TIME_PERIOD = 1
 # Allow number of missed heartbeats
 MISSED_HEARTBEAT_LIMIT = 5
 
-# Rate at which telemetry data will be published and written to memory.
-PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 
-
-def heartbeatMonitor(supervisorNode,
-                     heartbeatPublisher,
-                     logger,
-                     connection,
-                     heartbeatWatchdog):
+def heartbeatMonitor(supervisorNode):
+    logger = supervisorNode.get_logger()
 
     statusArray = DiagnosticArray()
     status = DiagnosticStatus()
@@ -121,13 +64,8 @@ def heartbeatMonitor(supervisorNode,
         supervisorNode.connection = establishMavlinkConnection(logger)
 
 
-def telemetryMonitor(supervisorNode,
-                     telemetryPublisher,
-                     logger,
-                     connection,
-                     currentTimeArray,
-                     positionArray,
-                     orientationArray):
+def telemetryMonitor(supervisorNode):
+    logger = supervisorNode.get_logger()
 
     if supervisorNode.connection != None and checkGPS(supervisorNode.connection, logger) != None:
         header = Header()
@@ -178,14 +116,6 @@ def telemetryMonitor(supervisorNode,
 
         logger.info("Telemetry data has been appended to telemetry arrays.")
 
-        # FOR DEBUGGING
-        if (supervisorNode.currentTimeArray.size) > 3:
-            currentTimeDebug = supervisorNode.get_clock().now().to_msg()
-
-            pose = Pose()
-
-            pose = searchTelemetryArrays(
-                supervisorNode, currentTimeDebug, pose)
     else:
         logger.warn("Unable to publish telemetry data!")
         logger.warn("Connection or GPS lock was not established!")
