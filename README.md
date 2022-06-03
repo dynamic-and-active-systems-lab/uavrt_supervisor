@@ -8,7 +8,7 @@ The development of this code was funded via National Science Foundation grant no
 
 - Establishes and monitors a serial or UDP connection with the Pixhawk 4 or Gazebo SITL, respectively
 - Recieves and publishes telemetry data from the Pixhawk 4 at a rate of 2Hz
-    - Able to write this telemetry data to a .txt file for post-processing
+  - Able to write this telemetry data to a .txt file for post-processing
 - Provides a service request for determining the position of the UAV in space given a timestamp
 - TBD 
 
@@ -39,7 +39,7 @@ TBD
 - Pixhawk 4
 - Airspy HF+ Discovery 
 - Computer computer
-    - This project was developed and deployed on the [UDOO x86 II Ultra](https://shop.udoo.org/en/udoo-x86-ii-ultra.html)
+  - This project was developed and deployed on the [UDOO x86 II Ultra](https://shop.udoo.org/en/udoo-x86-ii-ultra.html)
 
 ### Dependencies 
 
