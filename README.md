@@ -79,7 +79,6 @@ While a Python 3.9 enviroment is required for MATLAB ROS 2 support:
 sudo apt update && sudo apt upgrade
 sudo apt install python3.9
 python --version
-
 ```
 - macOS
 
@@ -179,7 +178,7 @@ MATLAB 2022a+ is recommended but it is not required:
 
 For installing this package, it is required that you have a functional ROS 2 workspace. Below is a set of instructions to create a ROS2 workspace. These instructions will fail unless the previous dependencies have been met. 
 
-- These instructions were supplied from [ROS 2 documentation](https://docs.ros.org/). All credit for these instructions is theirs. 
+- These instructions were supplied from [ROS 2 documentation](https://docs.ros.org/). All credit for these instructions goes to the ROS 2 developers. 
 - For more details on creating a workspace using [Foxy](https://docs.ros.org/en/foxy/Tutorials/Workspace/Creating-A-Workspace.html) or [Galactic](https://docs.ros.org/en/galactic/Tutorials.html). 
 
 ### uavrt_ws
