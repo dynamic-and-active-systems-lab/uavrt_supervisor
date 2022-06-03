@@ -147,8 +147,6 @@ def checkGPS(supervisorNode):
 # https://mavlink.io/en/messages/common.html
 # We use GLOBAL_POSITION_INT ( #33 ) for lon, lat, alt
 # and ATTITUDE_QUATERNION ( #31 ) for quaternion data (x, y, z, w)
-#
-# TODO: How do I catch BAD_DATA? Should I make a seperate except clause for it?
 def getLongitude(supervisorNode):
     try:
         longitude = supervisorNode.connection.messages['GLOBAL_POSITION_INT'].lon

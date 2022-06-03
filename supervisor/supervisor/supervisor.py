@@ -115,6 +115,7 @@ PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 # "command that would reset the serial port if I unplugged and then replugged in usb"
 # TODO: I'm not sure why checkHeartbeat() works with connection but not
 # supervisorNode.connection
+# TODO: How do I catch BAD_DATA? Should I make a seperate except clause for it?
 
 
 class Supervisor(Node):

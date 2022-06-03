@@ -13,7 +13,7 @@ https://docs.ros.org/en/rolling/Concepts/About-ROS-Interfaces.html
 # Note: Requires installing scipy - pip3 install scipy
 from scipy.interpolate import *
 
-# DELETE
+# Interface for supplying the Time() object 
 from builtin_interfaces.msg import *
 from geometry_msgs.msg import *
 

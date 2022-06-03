@@ -7,9 +7,6 @@ https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscri
 
 from supervisor.mavlink_utilities import *
 
-# DELETE
-from supervisor.supervisor_servicers import *
-
 from std_msgs.msg import *
 from geometry_msgs.msg import *
 from diagnostic_msgs.msg import *
@@ -89,10 +86,10 @@ def telemetryMonitor(supervisorNode):
         position.y = float(getLatitude(supervisorNode))
         position.z = float(getAltitude(supervisorNode))
 
-        orientation.x = float(getLongitude(supervisorNode))
-        orientation.y = float(getLatitude(supervisorNode))
-        orientation.z = float(getAltitude(supervisorNode))
-        orientation.w = float(getAltitude(supervisorNode))
+        orientation.x = float(getQuaternionX(supervisorNode))
+        orientation.y = float(getQuaternionY(supervisorNode))
+        orientation.z = float(getQuaternionZ(supervisorNode))
+        orientation.w = float(getQuaternionW(supervisorNode))
 
         pose.position = position
         pose.orientation = orientation
@@ -118,9 +115,6 @@ def telemetryMonitor(supervisorNode):
                                                     axis=1)
 
         logger.info("Telemetry data has been appended to telemetry arrays.")
-
-        # DELETE 
-        # searchTelemetryArrays(supervisorNode, currentTime.to_msg(), pose)
 
     else:
         logger.warn("Unable to publish telemetry data!")
