@@ -2,7 +2,7 @@
 
 ### Phase 1:
 
-1. Build telemetry system on supervisor node
+#### 1. Build telemetry system on supervisor node
 
 - [x] Receives telemetry data from Pixhawk at 2Hz
 - [x] Publishes /vehiclePose topic to ros2 network as geometry_msg/PoseStamped message type
@@ -12,7 +12,7 @@
 Expected time to implement: 2 weeks
 Actual time to implement: 3 weeks 
 
-2. Build transmission/receiving system on supervisor node
+#### 2. Build transmission and receiving system on supervisor node
 
 - [ ] Subscribes to the /pulsePose topic
   - [ ] Repackages /pulsePose messages as Mavlink debug messages and transmits to Pixhawk 
@@ -34,7 +34,7 @@ Actual time to implement:
 
 Note: This is purely contingent on whether we have decided on pymavlink or mavsdk. 
 
-3. Build radio control system on supervisor node
+#### 3. Build radio control system on supervisor node
 
 - [ ] Start subprocesses using the [Python subprocess library](https://docs.python.org/3/library/subprocess.html) 
   - [ ] Start subprocesses from different paths for configuration files 
@@ -52,7 +52,7 @@ Note: This is purely contingent on whether we have decided on pymavlink or mavsd
 Expected time to implement: ? weeks 
 Actual time to implement: 
 
-4. Full demo of supervisor node (minimum number of processes and tags)
+#### 4. Full demo of supervisor node (minimum number of processes and tags)
 
 - [ ] Super
 - [ ] Waits for command via Mavlink
@@ -92,10 +92,11 @@ TBD. I'd like to get more done with Phase 1 before laying out the tasks for Phas
 - Should I move to subprocesses or debug message receiving/transmitting? 
 - [Python subprocess library](https://docs.python.org/3/library/subprocess.html) 
 - [Python subprocess remote start/login](https://programmer.group/experience-sharing-the-best-practice-of-remote-login-server-with-python.html)
-  - The subprocess library supports opening up ssh connections to other machines in order to start processes on those machines 
+  - The subprocess library supports opening up ssh connections to other machines on the network in order to start processes on those machines 
   - This would only work if the machine that is being ssh'ed into has the required dependices installed, but this is a reasonable requirement 
   - Output from the remote process can be sent back to the local parent process
   - Note: I could not find better documentation of this feature than the link above;
     - I'm certain that it will work, but there is limited documentation on the functionality despite being supported by an official python library 
+  - Biggest concern: We could never have a distributed system unless we have an established network. How else would you start a remote subprocess? 
  - Meeting with Don? 
  - Paul: Can I talk to you for 5 minutes after the meeting? 
