@@ -31,6 +31,7 @@ endif()
 # For the use of non-standard messages and services in custom interfaces,
 # you have to add the package prefix before the msg or srv.
 # e.g. builtin_interfaces/Time timestamp
+# https://docs.ros.org/en/rolling/Concepts/About-ROS-Interfaces.html
 # https://answers.ros.org/question/362473/how-to-add-a-time-field-in-a-custom-message-file/
 
 #set(msg_files
@@ -63,7 +64,7 @@ ament_export_dependencies(rosidl_default_runtime)
 
 # I'm not sure entirely sure what this command does.
 # Seems to install the directories of the install directory of the workspace.
-# Makes in the butt for debugging so I leave it off. 
+# Makes in the butt for debugging so I leave it off.
 # ament_export_include_directories(include)
 
 ament_package()

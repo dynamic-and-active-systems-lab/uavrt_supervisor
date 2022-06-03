@@ -3,4 +3,4 @@
 
 builtin_interfaces/Time timestamp
 ---
-geometry_msgs/Pose interpolated_pose
+geometry_msgs/Pose pose

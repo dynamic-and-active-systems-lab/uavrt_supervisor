@@ -7,6 +7,9 @@ https://docs.ros.org/en/foxy/Tutorials/Writing-A-Simple-Py-Publisher-And-Subscri
 
 from supervisor.mavlink_utilities import *
 
+# DELETE
+from supervisor.supervisor_servicers import *
+
 from std_msgs.msg import *
 from geometry_msgs.msg import *
 from diagnostic_msgs.msg import *
@@ -115,6 +118,9 @@ def telemetryMonitor(supervisorNode):
                                                     axis=1)
 
         logger.info("Telemetry data has been appended to telemetry arrays.")
+
+        # DELETE 
+        # searchTelemetryArrays(supervisorNode, currentTime.to_msg(), pose)
 
     else:
         logger.warn("Unable to publish telemetry data!")
