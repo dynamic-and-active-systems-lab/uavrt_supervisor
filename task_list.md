@@ -55,7 +55,7 @@ Expected time to implement: 1-2 weeks
 
 Actual time to implement: 
 
-Note: This is contingent on we decide to connect to remote systems.  
+Note: This is contingent on how we decide to connect to remote systems.  
 
 #### 4. Full demo of supervisor node (specify number of processes and tags)
 
