@@ -85,7 +85,7 @@ Actual time to implement:
 
 Note: Please suggest more requirements to satisfy for a complete test. 
 
-5. Uncategorized
+#### 5. Uncategorized
 
 - [ ] Spend time optimizing and cleaning up current codebase prior to Phase 2
 
