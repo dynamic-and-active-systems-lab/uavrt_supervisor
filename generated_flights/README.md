@@ -1,0 +1,1 @@
+# generated_flights directory

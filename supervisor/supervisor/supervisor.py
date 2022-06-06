@@ -16,7 +16,7 @@ from supervisor.supervisor_servicers import *
 
 # Using the custome GetPose service in order to fufill request from client.
 # https://docs.ros.org/en/humble/Tutorials/Custom-ROS2-Interfaces.html
-from custom_interfaces.srv import *
+from uavrt_interfaces.srv import *
 
 # Import rclpy so its classes can be used.
 # https://docs.ros2.org/latest/api/rclpy/index.html
@@ -116,6 +116,10 @@ PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 # TODO: I'm not sure why checkHeartbeat() works with connection but not
 # supervisorNode.connection
 # TODO: How do I catch BAD_DATA? Should I make a seperate except clause for it?
+# TODO: I don't cover the case of when the user starts the system on UDP and
+# plugs in a Pixhawk via serial. It should notice this and switch to serial.
+# TODO: Weird bug with telemetry messages being printed twice when serial is
+# connected.
 
 
 class Supervisor(Node):
@@ -181,7 +185,7 @@ class Supervisor(Node):
         self.get_logger().info("Telemetry monitor is now publishing.")
 
     def createGetPoseServicer(self):
-        self.srv = self.create_service(
+        self.getPoseServicer = self.create_service(
             GetPose,
             '/getPose',
             partial(searchTelemetryArrays, self))

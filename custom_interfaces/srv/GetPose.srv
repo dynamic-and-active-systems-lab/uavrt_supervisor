@@ -1,6 +1,0 @@
-# This is our custom service that requests one Time object named timestamp
-# and responds with a Pose object called interpolated_pose.
-
-builtin_interfaces/Time timestamp
----
-geometry_msgs/Pose pose

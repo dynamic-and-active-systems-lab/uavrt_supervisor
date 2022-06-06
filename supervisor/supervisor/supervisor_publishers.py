@@ -115,7 +115,6 @@ def telemetryMonitor(supervisorNode):
                                                     axis=1)
 
         logger.info("Telemetry data has been appended to telemetry arrays.")
-
     else:
         logger.warn("Unable to publish telemetry data!")
         logger.warn("Connection or GPS lock was not established!")
