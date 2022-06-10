@@ -6,7 +6,7 @@ The development of this code was funded via National Science Foundation grant no
 
 # Features
 
-- Establishes and monitors a serial or UDP connection with the Pixhawk 4 or Gazebo SITL, respectively
+- Establishes and monitors a serial or UDP connection with the PX4 Autopilot or Gazebo SITL, respectively
 - Recieves and publishes telemetry data from the Pixhawk 4 at a rate of 2Hz
   - Able to write this telemetry data to a .txt file for post-processing
 - Provides a service request for determining the position of the UAV in space given a timestamp
@@ -36,7 +36,7 @@ TBD
 
 ### Hardware
 
-- Pixhawk 4
+- [PX4 autopilot](https://docs.px4.io/master/en/flight_controller/pixhawk4.html)
 - Airspy HF+ Discovery 
 - Computer computer
   - This project was developed and deployed on the [UDOO x86 II Ultra](https://shop.udoo.org/en/udoo-x86-ii-ultra.html)
@@ -164,9 +164,9 @@ This codebase supports the Foxy Fitzroy and Galactic Geochelone distributions of
 
 This codebase supports [MAVLink V2](https://mavlink.io/en/guide/mavlink_2.html). 
 
-We use Pymavlink as an interface to the MAVLink protocol: 
+We use MAVSDK C++ as the interface to the MAVLink protocol: 
 
-- [Pymavlink](https://github.com/ArduPilot/pymavlink)
+- [MAVSDK C++](https://mavsdk.mavlink.io/main/en/cpp/)
 
 #### MATLAB
 
