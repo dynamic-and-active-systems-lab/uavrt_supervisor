@@ -120,6 +120,8 @@ PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 # plugs in a Pixhawk via serial. It should notice this and switch to serial.
 # TODO: Weird bug with telemetry messages being printed twice when serial is
 # connected.
+# TODO: Implement Slerp for quaternion GetPose.
+# TODO: Make Px4 Gazebo docker file with Don's bug fix. 
 
 
 class Supervisor(Node):
