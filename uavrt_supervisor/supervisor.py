@@ -104,26 +104,6 @@ PUBLISH_HEARTBEAT_STATUS_TIME_PERIOD = 1
 # Rate at which telemetry data will be published and written to memory.
 PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 
-# TODO: Create launch logging configuration file
-# UNIQUE_LOG_BASE_PATH = '~/uavrt_ws/src/supervisor/log'
-# TODO: Need to add unit testing eventually.
-# TODO: Not sure how make it so import/from statments are all in one file/
-# organized/centralized - email Don
-# TODO: Organize everything into a callback_group to ensure the proper order
-# of callbacks and log messages.
-# TODO: Figure out serial reset
-# "command that would reset the serial port if I unplugged and then replugged in usb"
-# TODO: I'm not sure why checkHeartbeat() works with connection but not
-# supervisorNode.connection
-# TODO: How do I catch BAD_DATA? Should I make a seperate except clause for it?
-# TODO: I don't cover the case of when the user starts the system on UDP and
-# plugs in a Pixhawk via serial. It should notice this and switch to serial.
-# TODO: Weird bug with telemetry messages being printed twice when serial is
-# connected.
-# TODO: Implement Slerp for quaternion GetPose.
-# TODO: Make Px4 Gazebo docker file with Don's bug fix.
-# TODO: Edit Cmake file for uavrt_interfaces to match uavrt_ml_enc_dec. 
-
 
 class Supervisor(Node):
 
