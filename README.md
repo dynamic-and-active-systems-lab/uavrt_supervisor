@@ -2,6 +2,8 @@
 
 This ROS 2 Node is responsible for supervising the nodes/processes running on the companion computer. These responsiblities include:
 
+# Features
+
 - Starting, stopping, pausing, and unpausing nodes/processes
 - Monitoring the health of nodes/processes and reporting this information to the user
 
