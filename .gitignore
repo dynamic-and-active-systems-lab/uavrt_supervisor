@@ -1,9 +1,12 @@
 ## Both ##
 
-# We want to clone the custom messages/services repo into uavrt_supervise.
-# But we don't want it to be uploaded with the uavrt_supervise repo since it
-# has its own.
+# We want to clone the individual packages into this source directory.
+# But we don't want the packages to be uploaded into the uavrt_source repo.
 /uavrt_interfaces
+/uavrt_supervisor
+/uavrt_mavlink_encoder_decoder
+
+/airspyhf_channelize
 
 ### macOS ###
 
