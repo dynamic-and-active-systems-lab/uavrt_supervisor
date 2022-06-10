@@ -1,4 +1,4 @@
-# Supervisor portion of the UAV-RT architecture
+# UAV-RT Supervisor package
 
 This ROS 2 Node is responsible for supervising the nodes/processes running on the companion computer. These responsiblities include:
 
