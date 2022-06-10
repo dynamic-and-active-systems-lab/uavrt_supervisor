@@ -121,7 +121,8 @@ PUBLISH_TELEMETRY_DATA_TIME_PERIOD = .5
 # TODO: Weird bug with telemetry messages being printed twice when serial is
 # connected.
 # TODO: Implement Slerp for quaternion GetPose.
-# TODO: Make Px4 Gazebo docker file with Don's bug fix. 
+# TODO: Make Px4 Gazebo docker file with Don's bug fix.
+# TODO: Edit Cmake file for uavrt_interfaces to match uavrt_ml_enc_dec. 
 
 
 class Supervisor(Node):
