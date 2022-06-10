@@ -12,8 +12,9 @@ https://docs.ros.org/en/rolling/Concepts/About-ROS-Interfaces.html
 # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html
 # Note: Requires installing scipy - pip3 install scipy
 from scipy.interpolate import *
+from scipy.spatial.transform import *
 
-# Interface for supplying the Time() object 
+# Interface for supplying the Time() object
 from builtin_interfaces.msg import *
 from geometry_msgs.msg import *
 
@@ -39,7 +40,7 @@ def searchTelemetryArrays(supervisorNode, request, response):
     positonFunction = interp1d(supervisorNode.currentTimeArray,
                                supervisorNode.positionArray)
 
-    orientationFunction = interp1d(supervisorNode.currentTimeArray,
+    orientationFunction = Slerp(supervisorNode.currentTimeArray,
                                    supervisorNode.orientationArray)
 
     interpolatedPositions = positonFunction(timestamp)
