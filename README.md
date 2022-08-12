@@ -15,13 +15,13 @@ TBD
 
 # Documentation
 
-The supporting documentation for this project can be found on the following site:
+The supporting documentation for this project can be found here. (TBD)
 
 TBD
 
 # System requirements
 
-The system requirments for the use of this package can be found on the following site:
+The system requirments for the use of this package can be found here. (TBD)
 
 TBD
 
@@ -29,6 +29,11 @@ TBD
 
 TBD
 
+# Troubleshooting
+
+Troubleshooting tips can be found here. (TBD)
+
 # License
 
 This codebase is released under the GNU Lesser General Public License v3 or later.
+
