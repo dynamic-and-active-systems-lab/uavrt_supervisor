@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'supervisor'
+package_name = 'uavrt_supervisor'
 
 setup(
     name=package_name,
@@ -14,13 +14,13 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='dasl',
-    maintainer_email='dasl@todo.todo',
+    maintainer_email='mattay2323@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'supervisor_node = supervisor.supervisor:main'
+            'main = uavrt_supervisor.main:main'
         ],
     },
 )
