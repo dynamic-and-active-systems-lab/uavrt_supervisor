@@ -4,9 +4,16 @@
   <name>uavrt_supervisor</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="mattay2323@gmail.com">dasl</maintainer>
+  <maintainer email="mba75@nau.edu">Matt</maintainer>
   <license>TODO: License declaration</license>
 
+  # ROS2 libraries #
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
+  <exec_depend>uavrt_interfaces</exec_depend>
+
+  # Default tests #
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
