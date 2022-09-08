@@ -24,3 +24,8 @@ class DiagnosticStatusIndiceControl(Enum):
 class KeyValueIndicesControl(Enum):
     CENTER_FREQUENCY = 0
     SAMPLE_RATE = 1
+
+class NetcatAirspyhfSubprocessDictionary(Enum):
+    CENTER_FREQUENCY = 0
+    SAMPLE_RATE = 1
+    NETCAT_AIRSPYHF_SUBPROCESS = 2

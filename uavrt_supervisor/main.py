@@ -36,6 +36,7 @@ from rclpy.logging import get_logger
 # This Stackoverflow question/answer helped me figured out this issue:
 # https://stackoverflow.com/a/58504978
 from uavrt_supervisor.netcat_airspyhf_component import NetcatAirspyhfComponent
+from uavrt_supervisor.airspyhf_channelize_component import AirspyfhChannelizeComponent
 
 # NOTE: Only for debug purposes. Delete after.
 from uavrt_supervisor.test_harness import TestHarness
@@ -47,11 +48,13 @@ def main(args=None):
     executor = SingleThreadedExecutor()
 
     netcat_airspyhf_component = NetcatAirspyhfComponent()
+    airspyhf_channelize_component = AirspyfhChannelizeComponent()
 
     # Note: Debugging, delete after.
     test_harness = TestHarness()
 
     executor.add_node(netcat_airspyhf_component)
+    executor.add_node(airspyhf_channelize_component)
     executor.add_node(test_harness)
 
     try:

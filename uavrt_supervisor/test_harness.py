@@ -40,7 +40,7 @@ class TestHarness(Node):
         # Format: Msg type, topic, queue size
         self._test_harness_netcat_airspyhf_component_control_publisher = self.create_publisher(
             DiagnosticArray,
-            'control_netcat_airspyhf',
+            'control_netcat_airspyhf_subprocess',
             self._queue_size_)
         self.get_logger().info(
             "Test harness is now publishing to the 'control_netcat_airspyhf' topic.")
@@ -69,4 +69,27 @@ class TestHarness(Node):
 
         _status_array.status.append(_status)
 
-        self._test_harness_netcat_airspyhf_component_control_publisher.publish(_status_array)
+        self._test_harness_netcat_airspyhf_component_control_publisher.publish(
+            _status_array)
+
+        # _status_array.header.frame_id = "control"
+        # _status_array.header.stamp = self.get_clock().now().to_msg()
+        #
+        # _status.level = b'0'
+        # _status.name = "netcat_airspyhf_component"
+        # _status.message = "stop"
+        # _status.hardware_id = "1"
+        #
+        # _center_frequency_value.key = "center_frequency"
+        # _center_frequency_value.value = "91.7"
+        #
+        # _sample_rate_value.key = "sample_rate"
+        # _sample_rate_value.value = "912000"
+        #
+        # _status.values.append(_center_frequency_value)
+        # _status.values.append(_sample_rate_value)
+        #
+        # _status_array.status.append(_status)
+        #
+        # self._test_harness_netcat_airspyhf_component_control_publisher.publish(
+        #     _status_array)
