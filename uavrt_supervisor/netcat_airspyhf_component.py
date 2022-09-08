@@ -36,9 +36,6 @@ from rclpy.timer import Rate
 # A set of packages which contain common interface files (.msg and .srv) for ROS2:
 # https://github.com/ros2/common_interfaces/tree/master
 #
-# Import the built-in Diagnostic messages that the node uses to timestamp and
-# structure heartbeat status messages that it publishes on the /heartbeatStatus
-# topic.
 # https://github.com/ros2/common_interfaces/tree/master/diagnostic_msgs
 # http://wiki.ros.org/diagnostics/Tutorials/Creating%20a%20Diagnostic%20Analyzer#Generating_Diagnostics_Input
 from diagnostic_msgs.msg import DiagnosticArray
@@ -49,6 +46,7 @@ from diagnostic_msgs.msg import KeyValue
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndiceControl
 from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
 from uavrt_supervisor.enum_members_values import NetcatAirspyhfSubprocessDictionary
+from uavrt_supervisor.enum_members_values import SystemControl
 
 
 class NetcatAirspyhfComponent(Node):
@@ -186,20 +184,23 @@ class NetcatAirspyhfComponent(Node):
                 # Publish status message using original message
                 self._status_publisher.publish(message)
 
-        elif message_message == "stop":
+        elif message_message == "stop" and message_hardware_id == str(SystemControl.STOP_ALL_SUBPROCESS.value):
             try:
                 if self._netcat_airspyhf_subprocess_counter <= 0:
                     raise Exception(
                         "The number of netcat/airspyhf subprocesses is already 0.")
-                # Kill process in collection
-                self._netcat_airspyhf_subprocess_dictionary[message_hardware_id][2].kill
-                # Remove subprocess from the collection
-                self._netcat_airspyhf_subprocess_dictionary.pop(
-                    message_hardware_id)
-                # Decrement counter
-                self._netcat_airspyhf_subprocess_counter -= 1
-                # Log
-                self.get_logger().info("A netcat/airspyhf subprocesses has been stopped.")
+                # Iterate through subprocess dictionary and kill processes
+                for subprocess_hardware_id in self._netcat_airspyhf_subprocess_dictionary.keys():
+                    # Kill process in collection
+                    self._netcat_airspyhf_subprocess_dictionary[subprocess_hardware_id][
+                        NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].kill
+                    # Remove subprocess from the collection
+                    self._netcat_airspyhf_subprocess_dictionary.pop(
+                        message_hardware_id)
+                    # Decrement counter
+                    self._netcat_airspyhf_subprocess_counter -= 1
+                    # Log
+                    self.get_logger().info("A netcat/airspyhf subprocesses has been stopped.")
             except Exception as instance:
                 # Publish status message with ERROR level
                 message.status[DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value].level = b'2'
@@ -227,25 +228,25 @@ class NetcatAirspyhfComponent(Node):
 
                 _center_frequency_value.key = "center_frequency"
                 _center_frequency_value.value = self._netcat_airspyhf_subprocess_dictionary[
-                    subprocess_hardware_id][0]
+                    subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.CENTER_FREQUENCY.value]
 
                 _sample_rate_value.key = "sample_rate"
                 _sample_rate_value.value = self._netcat_airspyhf_subprocess_dictionary[
-                    subprocess_hardware_id][1]
+                    subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.SAMPLE_RATE.value]
 
                 _status.values.append(_center_frequency_value)
                 _status.values.append(_sample_rate_value)
 
                 # A None value indicates that the process hasn’t terminated yet.
                 if self._netcat_airspyhf_subprocess_dictionary[
-                        subprocess_hardware_id][2].poll() == None:
+                        subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].poll() == None:
                     _status.level = b'0'
                     _status.message = "alive"
                 # Any value other than None means that the processes has terminated.
                 # If subprocess is dead, remove subprocess object from collection
                 # and publish status message and log message. Use ERROR level.
                 elif self._netcat_airspyhf_subprocess_dictionary[
-                        subprocess_hardware_id][2].poll() != None:
+                        subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].poll() != None:
                     _status.level = b'2'
                     _status.message = "dead"
 

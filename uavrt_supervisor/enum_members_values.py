@@ -18,6 +18,9 @@
 # https://docs.python.org/3/library/enum.html
 from enum import Enum
 
+class SystemControl(Enum):
+    STOP_ALL_SUBPROCESS = 0
+
 class DiagnosticStatusIndiceControl(Enum):
     DIAGNOSTIC_STATUS = 0
 
@@ -29,3 +32,6 @@ class NetcatAirspyhfSubprocessDictionary(Enum):
     CENTER_FREQUENCY = 0
     SAMPLE_RATE = 1
     NETCAT_AIRSPYHF_SUBPROCESS = 2
+
+class AirspyhfChannelizeSubprocessDictionary(Enum):
+    AIRSPYHF_CHANNELIZE_SUBPROCESS = 0

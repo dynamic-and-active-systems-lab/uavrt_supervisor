@@ -19,6 +19,13 @@
 from subprocess import Popen
 from subprocess import run
 from subprocess import CalledProcessError
+from subprocess import PIPE
+
+# https://docs.python.org/3/library/random.html
+from random import randint
+
+# https://docs.python.org/3/library/pathlib.html
+from pathlib import Path
 
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
@@ -36,9 +43,6 @@ from rclpy.timer import Rate
 # A set of packages which contain common interface files (.msg and .srv) for ROS2:
 # https://github.com/ros2/common_interfaces/tree/master
 #
-# Import the built-in Diagnostic messages that the node uses to timestamp and
-# structure heartbeat status messages that it publishes on the /heartbeatStatus
-# topic.
 # https://github.com/ros2/common_interfaces/tree/master/diagnostic_msgs
 # http://wiki.ros.org/diagnostics/Tutorials/Creating%20a%20Diagnostic%20Analyzer#Generating_Diagnostics_Input
 from diagnostic_msgs.msg import DiagnosticArray
@@ -49,6 +53,7 @@ from diagnostic_msgs.msg import KeyValue
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndiceControl
 from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
 from uavrt_supervisor.enum_members_values import NetcatAirspyhfSubprocessDictionary
+from uavrt_supervisor.enum_members_values import SystemControl
 
 
 class AirspyfhChannelizeComponent(Node):
@@ -62,15 +67,18 @@ class AirspyfhChannelizeComponent(Node):
         self._status_timer_message_publish_rate = .5
         # This value can be increased but the number of netcat_airspyhf
         # subprocesses needs to increase as well.
-        self.airspyhf_channelize_subprocess_limit = 1
+        self._airspyhf_channelize_subprocess_limit = 1
         # Ensure that this counter is <= to the limit.
-        self.airspyhf_channelize_subprocess_counter = 0
+        self._airspyhf_channelize_subprocess_counter = 0
         # Dictionary for storing netcat/airspyhf subprocess objects.
-        self.airspyhf_channelize_subprocess_dictionary = {}
-        #
-        self.airspyhf_channelize_subprocess_sampling_rate = 192000
-        #
-        self.airspyhf_channelize_subprocess_decimation_rate = 48
+        self._airspyhf_channelize_subprocess_dictionary = {}
+        # Default (and current costant) supported sampling rate
+        self._airspyhf_channelize_subprocess_sampling_rate = 192000
+        # Default (and current costant) supported decimation rate
+        self._airspyhf_channelize_subprocess_decimation_rate = 48
+        # Directory where airspyhf_channelize is installed
+        self._airspyhf_channelize_installation_directory = \
+            Path("./uavrt_source/portairspyhf_channelize").resolve()
 
         # Note: This needs to be swapped out with a logging configuration
         # that goes with a launch file.
@@ -115,7 +123,95 @@ class AirspyfhChannelizeComponent(Node):
             "Status timer is now publishing to the 'status_airspyhf_channelize_subprocess' topic.")
 
     def _control_callback_subscriber(self, message):
-        pass
+        message_type = message.header.frame_id
+        message_time = message.header.stamp
+
+        message_status_array = message.status[
+            DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value]
+
+        message_level = message_status_array.level
+        message_name = message_status_array.name
+        message_message = message_status_array.message
+        message_hardware_id = message_status_array.hardware_id
+
+        # Required export command to use airspyhf_channelize
+        # Points to the directory that contains the airspyhf_channelize exe
+        # https://stackoverflow.com/a/64391542
+        airspyhf_channelize_export_string = {'LD_LIBRARY_PATH': str(
+            self._airspyhf_channelize_installation_directory)}
+
+        # Standard arguments string for starting a airspyhf_channelize_subprocess
+        # This string assumes that the airspyhf_channelize executable was
+        # installed in ~/uavrt_workspace/uavrt_source/portairspyhf_channelize
+        # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
+        airspyhf_channelize_standard_arguments_string = "./airspyhf_channelize " + \
+        str(self._airspyhf_channelize_subprocess_sampling_rate) + \
+            " " + str(self._airspyhf_channelize_subprocess_decimation_rate)
+
+        # Required to switch airspyhf_channelize process to "Run" state
+        one = b'1'.decode()
+        airspyhf_channelize_run_string = \
+            "echo -e -n '\x01' | netcat -w 0 -u localhost 10001"
+        print(airspyhf_channelize_run_string)
+
+        if message_message == "start":
+            try:
+                if self._airspyhf_channelize_subprocess_counter >= self._airspyhf_channelize_subprocess_limit:
+                    raise Exception(
+                        "The limit of airspyhf channelize subprocesses been reached.")
+                # Start the new subprocess
+                airspyhf_channelize_subprocess = \
+                    Popen(airspyhf_channelize_standard_arguments_string, stdin=PIPE,
+                          shell=True, cwd=str(self._airspyhf_channelize_installation_directory),
+                          env=airspyhf_channelize_export_string,
+                          text=True)
+                # Add subprocess to collection
+                # The hardware_id corresponds to a random int value between 1 and 100000
+                # There could be repeated hardware_ids but the chance is slim.
+                # This should be fixed later in the event you have multiple channelizers.
+                self._airspyhf_channelize_subprocess_dictionary[randint(1, 100000)] = \
+                    [airspyhf_channelize_subprocess]
+                # Increment counter
+                self._airspyhf_channelize_subprocess_counter += 1
+                # Log
+                self.get_logger().info("A new airspyhf channelize subprocesses has been started.")
+                # Issue run command via separate process (that is killed right after)
+                airspyhf_channelize_subprocess_run_command = \
+                    Popen(airspyhf_channelize_run_string, shell=True)
+            except (CalledProcessError, Exception) as instance:
+                # Publish status message with ERROR level
+                message.status[DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value].level = b'2'
+                self.get_logger().error("Type: {}".format(type(instance)))
+                self.get_logger().error("Message: {}".format(instance))
+            finally:
+                # Publish status message using original message
+                self._status_publisher.publish(message)
+
+        elif message_message == "stop" and message_hardware_id == str(SystemControl.STOP_ALL_SUBPROCESS.value):
+            try:
+                if self._airspyhf_channelize_subprocess_counter <= 0:
+                    raise Exception(
+                        "The number of netcat/airspyhf subprocesses is already 0.")
+                # Iterate through subprocess dictionary and kill processes
+                for subprocess_hardware_id in self._airspyhf_channelize_subprocess_dictionary.keys():
+                    # Kill process in collection
+                    self._airspyhf_channelize_subprocess_dictionary[subprocess_hardware_id][
+                        AirspyhfChannelizeSubprocessDictionary.AIRSPYHF_CHANNELIZE_SUBPROCESS.value].kill
+                    # Remove subprocess from the collection
+                    self._airspyhf_channelize_subprocess_dictionary.pop(
+                        subprocess_hardware_id)
+                    # Decrement counter
+                    self._airspyhf_channelize_subprocess_counter -= 1
+                    # Log
+                    self.get_logger().info("A airspyhf channelize subprocesses has been stopped.")
+            except Exception as instance:
+                # Publish status message with ERROR level
+                message.status[DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value].level = b'2'
+                self.get_logger().error("Type: {}".format(type(instance)))
+                self.get_logger().error("Message: {}".format(instance))
+            finally:
+                # Publish status message using original message
+                self._status_publisher.publish(message)
 
     def _status_timer_callback(self):
         pass
