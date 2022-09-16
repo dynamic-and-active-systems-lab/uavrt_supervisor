@@ -16,16 +16,28 @@
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # https://docs.python.org/3/library/subprocess.html
+# Note: Some behavior may be platform dependent.
 from subprocess import Popen
-from subprocess import run
 from subprocess import CalledProcessError
-from subprocess import PIPE
+from subprocess import DEVNULL
 
 # https://docs.python.org/3/library/random.html
 from random import randint
 
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
+
+# https://docs.python.org/3/library/socket.html
+# Note: Some behavior may be platform dependent, since calls are made to the
+# operating system socket APIs.
+from socket import socket
+from socket import AF_INET
+from socket import SOCK_DGRAM
+
+# https://docs.python.org/3/library/time.html
+# Note: Use sparingly! Sleeping the main process will cause deadlock on that
+# thread.
+from time import sleep
 
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
@@ -79,6 +91,8 @@ class AirspyfhChannelizeComponent(Node):
         # Directory where airspyhf_channelize is installed
         self._airspyhf_channelize_installation_directory = \
             Path("./uavrt_source/portairspyhf_channelize").resolve()
+        # Receive port for function control commands
+        self._airspyhf_channelize_command_port = ("127.0.0.1", 10001)
 
         # Note: This needs to be swapped out with a logging configuration
         # that goes with a launch file.
@@ -145,14 +159,16 @@ class AirspyfhChannelizeComponent(Node):
         # installed in ~/uavrt_workspace/uavrt_source/portairspyhf_channelize
         # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
         airspyhf_channelize_standard_arguments_string = "./airspyhf_channelize " + \
-        str(self._airspyhf_channelize_subprocess_sampling_rate) + \
+            str(self._airspyhf_channelize_subprocess_sampling_rate) + \
             " " + str(self._airspyhf_channelize_subprocess_decimation_rate)
 
         # Required to switch airspyhf_channelize process to "Run" state
-        one = b'1'.decode()
-        airspyhf_channelize_run_string = \
-            "echo -e -n '\x01' | netcat -w 0 -u localhost 10001"
-        print(airspyhf_channelize_run_string)
+        # https://docs.python.org/3/library/stdtypes.html#int.to_bytes
+        airspyhf_channelize_run_byte = (1).to_bytes(length=1,
+                                                    byteorder='little')
+        # https://pythontic.com/modules/socket/udp-client-server-example
+        udp_send_command_socket = socket(family=AF_INET,
+                                         type=SOCK_DGRAM)
 
         if message_message == "start":
             try:
@@ -160,11 +176,21 @@ class AirspyfhChannelizeComponent(Node):
                     raise Exception(
                         "The limit of airspyhf channelize subprocesses been reached.")
                 # Start the new subprocess
-                airspyhf_channelize_subprocess = \
-                    Popen(airspyhf_channelize_standard_arguments_string, stdin=PIPE,
-                          shell=True, cwd=str(self._airspyhf_channelize_installation_directory),
-                          env=airspyhf_channelize_export_string,
-                          text=True)
+                airspyhf_channelize_subprocess = Popen(
+                    airspyhf_channelize_standard_arguments_string,
+                    stdout=DEVNULL,
+                    shell=True,
+                    cwd=str(
+                        self._airspyhf_channelize_installation_directory),
+                    env=airspyhf_channelize_export_string,
+                    text=True)
+                # We need to sleep the parent thread for a second to allow
+                # the airspyhf_channelize process time to start up.
+                # It's low complexity but dirty.
+                sleep(1)
+                # Issue run command via UDP socket
+                udp_send_command_socket.sendto(airspyhf_channelize_run_byte,
+                                               self._airspyhf_channelize_command_port)
                 # Add subprocess to collection
                 # The hardware_id corresponds to a random int value between 1 and 100000
                 # There could be repeated hardware_ids but the chance is slim.
@@ -175,9 +201,6 @@ class AirspyfhChannelizeComponent(Node):
                 self._airspyhf_channelize_subprocess_counter += 1
                 # Log
                 self.get_logger().info("A new airspyhf channelize subprocesses has been started.")
-                # Issue run command via separate process (that is killed right after)
-                airspyhf_channelize_subprocess_run_command = \
-                    Popen(airspyhf_channelize_run_string, shell=True)
             except (CalledProcessError, Exception) as instance:
                 # Publish status message with ERROR level
                 message.status[DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value].level = b'2'

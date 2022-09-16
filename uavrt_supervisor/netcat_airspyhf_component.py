@@ -19,6 +19,7 @@
 from subprocess import Popen
 from subprocess import run
 from subprocess import CalledProcessError
+from subprocess import DEVNULL
 
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
@@ -156,12 +157,16 @@ class NetcatAirspyhfComponent(Node):
                 # If check is true, and the process exits with a non-zero exit code,
                 # a CalledProcessError exception will be raised.
                 test_airtspyhf_subprocess = run(
-                    "/usr/local/bin/airspyhf_info", check=True)
+                    "/usr/local/bin/airspyhf_info",
+                    check=True,
+                    stdout=DEVNULL)
                 # Start the new subprocess
                 # Use Popen() instead of run() because processes started with
                 # subprocess.run() do not have access to the poll functionality.
                 netcat_airspyhf_subprocess = Popen(
-                    netcat_airspyhf_standard_arguments_string, shell=True)
+                    netcat_airspyhf_standard_arguments_string,
+                    stdout=DEVNULL,
+                    shell=True)
                 # Add subprocess to collection
                 # The message_hardware_id will correspond to the hardware_id
                 # of the airspyhf_channelize subprocess that was started
