@@ -44,10 +44,9 @@ from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
 # Enum values to describe the indice that is being accessed
-from uavrt_supervisor.enum_members_values import DiagnosticStatusIndiceControl
+from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
 from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
 from uavrt_supervisor.enum_members_values import NetcatAirspyhfSubprocessDictionary
-from uavrt_supervisor.enum_members_values import SystemControl
 
 
 class NetcatAirspyhfComponent(Node):
@@ -66,6 +65,8 @@ class NetcatAirspyhfComponent(Node):
         self._netcat_airspyhf_subprocess_counter = 0
         # Dictionary for storing netcat/airspyhf subprocess objects.
         self._netcat_airspyhf_subprocess_dictionary = {}
+        # Default (and current costant) supported sampling rate
+        self._netcat_airspyhf_subprocess_sampling_rate = 192000
 
         # Note: This needs to be swapped out with a logging configuration
         # that goes with a launch file.
@@ -114,7 +115,7 @@ class NetcatAirspyhfComponent(Node):
         message_time = message.header.stamp
 
         message_status_array = message.status[
-            DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value]
+            DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value]
 
         message_level = message_status_array.level
         message_name = message_status_array.name
@@ -124,10 +125,6 @@ class NetcatAirspyhfComponent(Node):
         message_center_frequency_array = message_status_array.values[
             KeyValueIndicesControl.CENTER_FREQUENCY.value]
         message_center_frequency = message_center_frequency_array.value
-
-        message_sample_rate_array = message_status_array.values[
-            KeyValueIndicesControl.SAMPLE_RATE.value]
-        message_sample_rate = message_sample_rate_array.value
 
         # Standard arguments string for starting a netcat_airspyhf_subprocess
         # Read the Security Considerations section before using shell=True
@@ -140,8 +137,8 @@ class NetcatAirspyhfComponent(Node):
         # process will not stay alive.
         netcat_airspyhf_standard_arguments_string = \
             "/usr/local/bin/airspyhf_rx -f " + message_center_frequency + " -m on " \
-            "-a " + message_sample_rate + " -r stdout -g on -l high -t 0 | netcat " \
-            "-w 1 -u localhost 10000"
+            "-a " + str(self._netcat_airspyhf_subprocess_sampling_rate) + \
+            " -r stdout -g on -l high -t 0 | netcat -w 1 -u localhost 10000"
 
         # Note: A match switch-case statement would work here as well.
         # It would follow the format: match message_message: ... case "start":
@@ -168,28 +165,24 @@ class NetcatAirspyhfComponent(Node):
                     stdout=DEVNULL,
                     shell=True)
                 # Add subprocess to collection
-                # The message_hardware_id will correspond to the hardware_id
-                # of the airspyhf_channelize subprocess that was started
-                # prior to this netcat_airspy_subprocess.
-                # We save the frquency and sample rate as well since we will
-                # need them later in order to restart the subprocess if need be.
+                # We save the center frequency as well since we will
+                # need it later in order to restart the subprocess if need be.
                 self._netcat_airspyhf_subprocess_dictionary[message_hardware_id] = \
-                    [message_center_frequency, message_sample_rate,
-                     netcat_airspyhf_subprocess]
+                    [message_center_frequency, netcat_airspyhf_subprocess]
                 # Increment counter
                 self._netcat_airspyhf_subprocess_counter += 1
                 # Log
                 self.get_logger().info("A new netcat/airspyhf subprocesses has been started.")
             except (CalledProcessError, Exception) as instance:
                 # Publish status message with ERROR level
-                message.status[DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value].level = b'2'
+                message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
                 self.get_logger().error("Type: {}".format(type(instance)))
                 self.get_logger().error("Message: {}".format(instance))
             finally:
                 # Publish status message using original message
                 self._status_publisher.publish(message)
 
-        elif message_message == "stop" and message_hardware_id == str(SystemControl.STOP_ALL_SUBPROCESS.value):
+        elif message_message == "stop" and message_hardware_id == "stop all":
             try:
                 if self._netcat_airspyhf_subprocess_counter <= 0:
                     raise Exception(
@@ -208,7 +201,7 @@ class NetcatAirspyhfComponent(Node):
                     self.get_logger().info("A netcat/airspyhf subprocesses has been stopped.")
             except Exception as instance:
                 # Publish status message with ERROR level
-                message.status[DiagnosticStatusIndiceControl.DIAGNOSTIC_STATUS.value].level = b'2'
+                message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
                 self.get_logger().error("Type: {}".format(type(instance)))
                 self.get_logger().error("Message: {}".format(instance))
             finally:
@@ -216,47 +209,44 @@ class NetcatAirspyhfComponent(Node):
                 self._status_publisher.publish(message)
 
     def _status_timer_callback(self):
-        _status_array = DiagnosticArray()
-        _status = DiagnosticStatus()
-        _center_frequency_value = KeyValue()
-        _sample_rate_value = KeyValue()
+        status_array = DiagnosticArray()
+        status = DiagnosticStatus()
+        center_frequency_value = KeyValue()
+        sample_rate_value = KeyValue()
 
         # Iterate through subprocess collection, polling each subprocess
         # Create new Diagnostic message. Publish as status
         try:
             for subprocess_hardware_id in self._netcat_airspyhf_subprocess_dictionary.keys():
-                _status_array.header.frame_id = "status"
-                _status_array.header.stamp = self.get_clock().now().to_msg()
+                status_array.header.frame_id = "status"
+                status_array.header.stamp = self.get_clock().now().to_msg()
 
-                _status.name = "netcat_airspyhf_component"
-                _status.hardware_id = subprocess_hardware_id
+                status.name = "netcat_airspyhf_component"
+                status.hardware_id = subprocess_hardware_id
 
-                _center_frequency_value.key = "center_frequency"
-                _center_frequency_value.value = self._netcat_airspyhf_subprocess_dictionary[
+                center_frequency_value.key = "center_frequency"
+                center_frequency_value.value = self._netcat_airspyhf_subprocess_dictionary[
                     subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.CENTER_FREQUENCY.value]
 
-                _sample_rate_value.key = "sample_rate"
-                _sample_rate_value.value = self._netcat_airspyhf_subprocess_dictionary[
-                    subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.SAMPLE_RATE.value]
-
-                _status.values.append(_center_frequency_value)
-                _status.values.append(_sample_rate_value)
+                status.values.append(center_frequency_value)
 
                 # A None value indicates that the process hasn’t terminated yet.
                 if self._netcat_airspyhf_subprocess_dictionary[
                         subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].poll() == None:
-                    _status.level = b'0'
-                    _status.message = "alive"
+                    status.level = b'0'
+                    status.message = "alive"
                 # Any value other than None means that the processes has terminated.
                 # If subprocess is dead, remove subprocess object from collection
                 # and publish status message and log message. Use ERROR level.
                 elif self._netcat_airspyhf_subprocess_dictionary[
                         subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].poll() != None:
-                    _status.level = b'2'
-                    _status.message = "dead"
+                    status.level = b'2'
+                    status.message = "dead"
 
                     # Kill process in collection
-                    self._netcat_airspyhf_subprocess_dictionary[subprocess_hardware_id][2].kill
+                    self._netcat_airspyhf_subprocess_dictionary[
+                        subprocess_hardware_id][
+                        NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].kill
                     # Remove subprocess from the collection
                     self._netcat_airspyhf_subprocess_dictionary.pop(
                         subprocess_hardware_id)
@@ -266,10 +256,10 @@ class NetcatAirspyhfComponent(Node):
                     self.get_logger().info(
                         "A netcat/airspyhf subprocesses has been stopped since it was dead.")
 
-                _status_array.status.append(_status)
+                status_array.status.append(status)
 
                 # Publish status message
-                self._status_publisher.publish(_status_array)
+                self._status_publisher.publish(status_array)
         # RuntimeError: Dictionary changed size during iteration.
         # It seems impossible to get away from this error. W/e collection
         # type we use, it must be modified during Runtime.

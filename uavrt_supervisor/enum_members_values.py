@@ -18,20 +18,19 @@
 # https://docs.python.org/3/library/enum.html
 from enum import Enum
 
-class SystemControl(Enum):
-    STOP_ALL_SUBPROCESS = 0
-
-class DiagnosticStatusIndiceControl(Enum):
+class DiagnosticStatusIndicesControl(Enum):
     DIAGNOSTIC_STATUS = 0
 
 class KeyValueIndicesControl(Enum):
     CENTER_FREQUENCY = 0
-    SAMPLE_RATE = 1
+    DETECTOR_CONFIG_PATH = 1
 
 class NetcatAirspyhfSubprocessDictionary(Enum):
     CENTER_FREQUENCY = 0
-    SAMPLE_RATE = 1
-    NETCAT_AIRSPYHF_SUBPROCESS = 2
+    NETCAT_AIRSPYHF_SUBPROCESS = 1
 
 class AirspyhfChannelizeSubprocessDictionary(Enum):
+    AIRSPYHF_CHANNELIZE_SUBPROCESS = 0
+
+class DetectorSubprocessDictionary(Enum):
     AIRSPYHF_CHANNELIZE_SUBPROCESS = 0

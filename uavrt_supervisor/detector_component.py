@@ -61,41 +61,40 @@ from diagnostic_msgs.msg import KeyValue
 # Enum values to describe the indice that is being accessed
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
 from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
-from uavrt_supervisor.enum_members_values import AirspyhfChannelizeSubprocessDictionary
+from uavrt_supervisor.enum_members_values import DetectorSubprocessDictionary
 
 
-class AirspyfhChannelizeComponent(Node):
+class DetectorComponent(Node):
     def __init__(self):
-        super().__init__('AirspyfhChannelizeComponent')
+        super().__init__('DetectorComponent')
 
         # Queue size is a required QoS (quality of service) setting that limits the
         # amount of queued messages if a subscriber is not receiving them fast enough.
         self._queue_size_ = 10
         # Rate at which status timer messages will be checked and published in seconds.
         self._status_timer_message_publish_rate = .5
-        # This value can be increased but the number of netcat_airspyhf
-        # subprocesses needs to increase as well.
-        self._airspyhf_channelize_subprocess_limit = 1
+        # This value can be increased/decreased
+        self._detector_subprocess_limit = 5
         # Ensure that this counter is <= to the limit.
-        self._airspyhf_channelize_subprocess_counter = 0
-        # Dictionary for storing netcat/airspyhf subprocess objects.
-        self._airspyhf_channelize_subprocess_dictionary = {}
-        # Default (and current costant) supported sampling rate
-        self._airspyhf_channelize_subprocess_sampling_rate = 192000
-        # Default (and current costant) supported decimation rate
-        self._airspyhf_channelize_subprocess_decimation_rate = 48
+        self._detector_subprocess_counter = 0
+        # Dictionary for storing detector subprocess objects.
+        self._detector_subprocess_dictionary = {}
         # Directory where airspyhf_channelize is installed
         self._airspyhf_channelize_installation_directory = \
             Path("./uavrt_source/portairspyhf_channelize").resolve()
+        # Directory where ros 2 galactic local_setup.bash script is installed
+        self._uavrt_workspace_installation_directory = \
+            Path("./install/local_setup.bash").resolve()
         # Receive port for function control commands
-        self._airspyhf_channelize_command_port = ("127.0.0.1", 10001)
+        # TEMP: REMOVE THIS
+        self._detector_command_port = ("127.0.0.1", 30000)
 
         # Note: This needs to be swapped out with a logging configuration
         # that goes with a launch file.
         self.get_logger().set_level(LoggingSeverity.INFO)
         self.get_logger().info("Logging severity has been set to info.")
 
-        self.get_logger().info("Airspy Channelize Component has been created.")
+        self.get_logger().info("Detector Component has been created.")
 
         # Control subscriber
         self._initialize_control_subscriber()
@@ -110,27 +109,27 @@ class AirspyfhChannelizeComponent(Node):
         # Format: Msg type, topic, callback, queue size
         self._control_subscriber = self.create_subscription(
             DiagnosticArray,
-            'control_airspyhf_channelize_subprocess',
+            'control_detector_subprocess',
             self._control_callback_subscriber,
             self._queue_size_)
         self.get_logger().info(
-            "Control subscriber is now subscribing to the 'control_airspyhf_channelize_subprocess' topic.")
+            "Control subscriber is now subscribing to the 'control_detector_subprocess' topic.")
 
     def _initialize_status_publisher(self):
         # Format: Msg type, topic, queue size
         self._status_publisher = self.create_publisher(
             DiagnosticArray,
-            'status_airspyhf_channelize_subprocess',
+            'status_detector_subprocess',
             self._queue_size_)
         self.get_logger().info(
-            "Status publisher is now publishing to the 'status_airspyhf_channelize_subprocess' topic.")
+            "Status publisher is now publishing to the 'status_detector_subprocess' topic.")
 
     def _initialize_status_timer(self):
         self._status_timer = self.create_timer(
             self._status_timer_message_publish_rate,
             self._status_timer_callback)
         self.get_logger().info(
-            "Status timer is now publishing to the 'status_airspyhf_channelize_subprocess' topic.")
+            "Status timer is now publishing to the 'status_detector_subprocess' topic.")
 
     def _control_callback_subscriber(self, message):
         message_type = message.header.frame_id
@@ -144,56 +143,69 @@ class AirspyfhChannelizeComponent(Node):
         message_message = message_status_array.message
         message_hardware_id = message_status_array.hardware_id
 
-        # Required export command to use airspyhf_channelize
+        message_center_frequency_array = message_status_array.values[
+            KeyValueIndicesControl.CENTER_FREQUENCY.value]
+        message_center_frequency = message_center_frequency_array.value
+
+        # Required export command to use the detectors
         # Points to the directory that contains the airspyhf_channelize exe
         # That directory should also contain the .so objects that were used to
         # compile the executable.
         # https://stackoverflow.com/a/64391542
         airspyhf_channelize_export_string = {'LD_LIBRARY_PATH': str(
-            self._airspyhf_channelize_installation_directory)}
+            self._airspyhf_channelize_installation_directory)}\
 
-        # Standard arguments string for starting a airspyhf_channelize_subprocess
-        # This string assumes that the airspyhf_channelize executable was
-        # installed in ~/uavrt_workspace/uavrt_source/portairspyhf_channelize
-        airspyhf_channelize_standard_arguments_string = "./airspyhf_channelize " + \
-            str(self._airspyhf_channelize_subprocess_sampling_rate) + \
-            " " + str(self._airspyhf_channelize_subprocess_decimation_rate)
+        # Standard arguments string for starting a detector_subprocess
+        # This string assumes that the detector config files are located in
+        # ~/uavrt_workspace/uavrt_source/generated_tags
+        # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
+        detector_standard_arguments_string = \
+            ". /opt/ros/galactic/setup.bash\n" + \
+            "ros2 run uavrt_detection uavrt_detection"
+            # ". " + str(self._uavrt_workspace_installation_directory) + "\n" + \
 
-        # Required to switch airspyhf_channelize process to "Run" state
+        # Required to switch detector process to "Run" state
         # https://docs.python.org/3/library/stdtypes.html#int.to_bytes
-        airspyhf_channelize_run_byte = (1).to_bytes(length=1,
-                                                    byteorder='little')
+        detector_run_byte = (1).to_bytes(length=1,
+                                         byteorder='little')
         # https://pythontic.com/modules/socket/udp-client-server-example
         udp_send_command_socket = socket(family=AF_INET,
                                          type=SOCK_DGRAM)
 
         if message_message == "start":
             try:
-                if self._airspyhf_channelize_subprocess_counter >= self._airspyhf_channelize_subprocess_limit:
+                if self._detector_subprocess_counter >= self._detector_subprocess_limit:
                     raise Exception(
-                        "The limit of airspyhf channelize subprocesses been reached.")
+                        "The limit of detector subprocesses been reached.")
                 # Start the new subprocess
-                airspyhf_channelize_subprocess = Popen(
-                    airspyhf_channelize_standard_arguments_string,
-                    stdout=DEVNULL,
+                detector_subprocess = Popen(
+                    detector_standard_arguments_string,
+                    # stdout=DEVNULL,
                     shell=True,
+                    # CHANGE THIS CHANGE THIS CHANGE THIS
                     cwd=str(
-                        self._airspyhf_channelize_installation_directory),
+                        "/home/dasl/uavrt_workspace/uavrt_source/log/detector_log/config_example"),
                     env=airspyhf_channelize_export_string)
                 # We need to sleep the parent thread for a second to allow
-                # the airspyhf_channelize process time to start up.
+                # the detector process time to start up.
                 # It's low complexity but dirty.
                 sleep(1)
                 # Issue run command via UDP socket
-                udp_send_command_socket.sendto(airspyhf_channelize_run_byte,
-                                               self._airspyhf_channelize_command_port)
+                # CHANGE THIS CHANGE THIS CHANGE THIS - SHOULD NOT BE A CONSTANT PORT
+                udp_send_command_socket.sendto(detector_run_byte,
+                                               self._detector_command_port)
                 # Add subprocess to collection
-                self._airspyhf_channelize_subprocess_dictionary[message_hardware_id] = \
-                    [airspyhf_channelize_subprocess]
+                # The hardware_id corresponds to a random int value between 1 and 100000
+                # There could be repeated hardware_ids but the chance is slim.
+                # This should be fixed later in the event you have multiple detectors.
+                # We save the center frquency as well since we will
+                # need it later in order to restart the subprocess if need be.
+                self._detector_subprocess_dictionary[message_hardware_id] = \
+                    [message_center_frequency, detector_subprocess]
                 # Increment counter
-                self._airspyhf_channelize_subprocess_counter += 1
+                self._detector_subprocess_counter += 1
                 # Log
-                self.get_logger().info("A new airspyhf channelize subprocesses has been started.")
+                self.get_logger().info("A new detector subprocesses has been started.")
             except (CalledProcessError, Exception) as instance:
                 # Publish status message with ERROR level
                 message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
@@ -205,19 +217,19 @@ class AirspyfhChannelizeComponent(Node):
 
         elif message_message == "stop" and message_hardware_id == "stop all":
             try:
-                if self._airspyhf_channelize_subprocess_counter <= 0:
+                if self._detector_subprocess_counter <= 0:
                     raise Exception(
-                        "The number of netcat/airspyhf subprocesses is already 0.")
+                        "The number of detector subprocesses is already 0.")
                 # Iterate through subprocess dictionary and kill processes
-                for subprocess_hardware_id in self._airspyhf_channelize_subprocess_dictionary.keys():
+                for subprocess_hardware_id in self._detector_subprocess_dictionary.keys():
                     # Kill process in collection
-                    self._airspyhf_channelize_subprocess_dictionary[subprocess_hardware_id][
-                        AirspyhfChannelizeSubprocessDictionary.AIRSPYHF_CHANNELIZE_SUBPROCESS.value].kill
+                    self._detector_subprocess_dictionary[subprocess_hardware_id][
+                        DetectorSubprocessDictionary.DETECTOR_SUBPROCESS.value].kill
                     # Remove subprocess from the collection
-                    self._airspyhf_channelize_subprocess_dictionary.pop(
+                    self._detector_subprocess_dictionary.pop(
                         subprocess_hardware_id)
                     # Decrement counter
-                    self._airspyhf_channelize_subprocess_counter -= 1
+                    self._detector_subprocess_counter -= 1
                     # Log
                     self.get_logger().info("A airspyhf channelize subprocesses has been stopped.")
             except Exception as instance:
