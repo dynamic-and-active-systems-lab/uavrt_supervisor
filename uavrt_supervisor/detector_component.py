@@ -159,6 +159,8 @@ class DetectorComponent(Node):
         # This string assumes that the detector config files are located in
         # ~/uavrt_workspace/uavrt_source/generated_tags
         # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
+        #
+        # ". /opt/ros/galactic/setup.bash\n" + \
         detector_standard_arguments_string = \
             "source ~/ros2_galactic/install/local_setup.bash\n" + \
             ". install/setup.bash\n" + \
