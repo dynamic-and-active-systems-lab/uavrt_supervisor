@@ -142,8 +142,8 @@ class StartStopComponent(Node):
         status.hardware_id = str(randint(1, 100000))
 
         center_frequency_value.key = "center_frequency"
-        center_frequency_value.value = str(message.frequency)
-        print("center_frequency_value.value: {}\n".format(center_frequency_value.value))
+        # Note: Need to convert NNNNNN to NNN.NNN
+        center_frequency_value.value = str(message.frequency / 1000)
 
         status.values.append(center_frequency_value)
 

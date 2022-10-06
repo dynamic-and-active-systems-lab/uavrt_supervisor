@@ -153,16 +153,17 @@ class DetectorComponent(Node):
         # compile the executable.
         # https://stackoverflow.com/a/64391542
         airspyhf_channelize_export_string = {'LD_LIBRARY_PATH': str(
-            self._airspyhf_channelize_installation_directory)}\
+            self._airspyhf_channelize_installation_directory)}
 
         # Standard arguments string for starting a detector_subprocess
         # This string assumes that the detector config files are located in
         # ~/uavrt_workspace/uavrt_source/generated_tags
         # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
         detector_standard_arguments_string = \
-            ". /opt/ros/galactic/setup.bash\n" + \
+            "source ~/ros2_galactic/install/local_setup.bash\n" + \
+            ". install/setup.bash\n" + \
+            "cd ~/uavrt_workspace/uavrt_source/log/detector_log/config_example\n" + \
             "ros2 run uavrt_detection uavrt_detection"
-            # ". " + str(self._uavrt_workspace_installation_directory) + "\n" + \
 
         # Required to switch detector process to "Run" state
         # https://docs.python.org/3/library/stdtypes.html#int.to_bytes
@@ -180,11 +181,12 @@ class DetectorComponent(Node):
                 # Start the new subprocess
                 detector_subprocess = Popen(
                     detector_standard_arguments_string,
+                    executable='/bin/bash',
                     # stdout=DEVNULL,
                     shell=True,
                     # CHANGE THIS CHANGE THIS CHANGE THIS
-                    cwd=str(
-                        "/home/dasl/uavrt_workspace/uavrt_source/log/detector_log/config_example"),
+                    #cwd=str(
+                    #    "/home/dasl/uavrt_workspace/uavrt_source/log/detector_log/config_example"),
                     env=airspyhf_channelize_export_string)
                 # We need to sleep the parent thread for a second to allow
                 # the detector process time to start up.
