@@ -54,14 +54,10 @@ def main(args=None):
     airspyhf_channelize_component = AirspyfhChannelizeComponent()
     detector_component = DetectorComponent()
 
-    # Note: Debugging, delete after.
-    # test_harness = TestHarness()
-
     executor.add_node(start_stop_component)
     executor.add_node(netcat_airspyhf_component)
     executor.add_node(airspyhf_channelize_component)
     executor.add_node(detector_component)
-    # executor.add_node(test_harness)
 
     try:
         # Using "rclpy.logging.get_logger("[node_name]").[severity]("[msg]")"

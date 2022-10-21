@@ -153,13 +153,16 @@ class DetectorComponent(Node):
         # compile the executable.
         # https://stackoverflow.com/a/64391542
         airspyhf_channelize_export_string = {'LD_LIBRARY_PATH': str(
-            self._airspyhf_channelize_installation_directory)}
+            self._airspyhf_channelize_installation_directory), 'HOME': "/home/dasl"}
 
         # Standard arguments string for starting a detector_subprocess
         # This string assumes that the detector config files are located in
         # ~/uavrt_workspace/uavrt_source/generated_tags
         # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
         #
+        # Note: The source command used depends on the ROS 2 install.
+        # The following code assumes the suggested Ubuntu install by ROS 2
+        # developers. This makes it a requirement. 
         # ". /opt/ros/galactic/setup.bash\n" + \
         detector_standard_arguments_string = \
             "source ~/ros2_galactic/install/local_setup.bash\n" + \
