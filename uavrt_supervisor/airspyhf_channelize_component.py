@@ -21,6 +21,15 @@ from subprocess import Popen
 from subprocess import CalledProcessError
 from subprocess import DEVNULL
 
+# Using subprocess.Popen.kill() will not work when attempting to kill a
+# subproces that is started with the Shell=True argument. The SO link below
+# describes the correct process.
+# https://stackoverflow.com/a/4791612
+from os import killpg
+from os import setsid
+from os import getpgid
+from signal import SIGTERM
+
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
 
@@ -176,6 +185,7 @@ class AirspyfhChannelizeComponent(Node):
                 airspyhf_channelize_subprocess = Popen(
                     airspyhf_channelize_standard_arguments_string,
                     stdout=DEVNULL,
+                    preexec_fn=setsid,
                     shell=True,
                     cwd=str(
                         self._airspyhf_channelize_installation_directory),
@@ -211,8 +221,10 @@ class AirspyfhChannelizeComponent(Node):
                 # Iterate through subprocess dictionary and kill processes
                 for subprocess_hardware_id in self._airspyhf_channelize_subprocess_dictionary.keys():
                     # Kill process in collection
-                    self._airspyhf_channelize_subprocess_dictionary[subprocess_hardware_id][
-                        AirspyhfChannelizeSubprocessDictionary.AIRSPYHF_CHANNELIZE_SUBPROCESS.value].kill
+                    killpg(getpgid(
+                        self._airspyhf_channelize_subprocess_dictionary[subprocess_hardware_id][
+                            AirspyhfChannelizeSubprocessDictionary.AIRSPYHF_CHANNELIZE_SUBPROCESS.value].pid),
+                           SIGTERM)
                     # Remove subprocess from the collection
                     self._airspyhf_channelize_subprocess_dictionary.pop(
                         subprocess_hardware_id)
@@ -225,6 +237,12 @@ class AirspyfhChannelizeComponent(Node):
                 message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
                 self.get_logger().error("Type: {}".format(type(instance)))
                 self.get_logger().error("Message: {}".format(instance))
+            except RuntimeError as instance:
+                # Whenever the dictionary size changes during runtime, this
+                # error will be thrown. It is not fatal, so we catch, report,
+                # and move on.
+                self.get_logger().info("Type: {}".format(type(instance)))
+                self.get_logger().info("Message: {}".format(instance))
             finally:
                 # Publish status message using original message
                 self._status_publisher.publish(message)

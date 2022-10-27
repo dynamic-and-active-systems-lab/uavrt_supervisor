@@ -168,9 +168,9 @@ class StartStopComponent(Node):
             # subprocesses before the airspyhf_channelizer subprocesses!
             # Else airspyhf_rx will not shut down properly.
             # This is a limitation/contraint of the processes.
-            self._control_netcat_airspyhf_publisher(message)
-            self._control_airspyhf_channelizer_publisher(message)
-            self._control_detector_publisher(message)
+            self._control_netcat_airspyhf_publisher.publish(message)
+            self._control_airspyhf_channelizer_publisher.publish(message)
+            self._control_detector_publisher.publish(message)
 
             self.get_logger().info(
                 "Successfully issued 'stop all' command to all subprocesses.")

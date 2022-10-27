@@ -40,9 +40,6 @@ from uavrt_supervisor.netcat_airspyhf_component import NetcatAirspyhfComponent
 from uavrt_supervisor.airspyhf_channelize_component import AirspyfhChannelizeComponent
 from uavrt_supervisor.detector_component import DetectorComponent
 
-# NOTE: Only for debug purposes. Delete after.
-from uavrt_supervisor.test_harness import TestHarness
-
 
 def main(args=None):
     init(args=args)

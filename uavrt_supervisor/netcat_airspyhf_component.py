@@ -21,6 +21,15 @@ from subprocess import run
 from subprocess import CalledProcessError
 from subprocess import DEVNULL
 
+# Using subprocess.Popen.kill() will not work when attempting to kill a
+# subproces that is started with the Shell=True argument. The SO link below
+# describes the correct process.
+# https://stackoverflow.com/a/4791612
+from os import killpg
+from os import setsid
+from os import getpgid
+from signal import SIGTERM
+
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
 # https://docs.ros2.org/galactic/api/rclpy/api/logging.html
@@ -122,30 +131,32 @@ class NetcatAirspyhfComponent(Node):
         message_message = message_status_array.message
         message_hardware_id = message_status_array.hardware_id
 
-        message_center_frequency_array = message_status_array.values[
-            KeyValueIndicesControl.CENTER_FREQUENCY.value]
-        message_center_frequency = message_center_frequency_array.value
-
-        # Standard arguments string for starting a netcat_airspyhf_subprocess
-        # Read the Security Considerations section before using shell=True
-        # elsewhere. It is used here since user input is a factor here.
-        # https://docs.python.org/3/library/subprocess.html#security-considerations
-        # Note: Using the -w argument within the Netcat call doesn't always work
-        # for Macos. The UAVRT system doesn't support Macos at the moment, so
-        # it is not a current concern.
-        # The timeout value has to be greater than 0 else the airspyhf_rx tool
-        # process will not stay alive.
-        netcat_airspyhf_standard_arguments_string = \
-            "/usr/local/bin/airspyhf_rx -f " + message_center_frequency + " -m on " \
-            "-a " + str(self._netcat_airspyhf_subprocess_sampling_rate) + \
-            " -r stdout -g on -l high -t 0 | netcat -w 1 -u localhost 10000"
-
         # Note: A match switch-case statement would work here as well.
         # It would follow the format: match message_message: ... case "start":
         # ... etc. However, the match keyword was introduced in Python version
         # 3.10, which isn't being used for this iteration of the UAVRT system.
         # https://docs.python.org/3.10/whatsnew/3.10.html#pep-634-structural-pattern-matching
         if message_message == "start":
+            # Control messages such as "stop" do no include a KeyValue array.
+            # Instead of creating a control callback for each control, we can
+            # set the center frequency within the "start" branch.
+            message_center_frequency_array = message_status_array.values[
+                KeyValueIndicesControl.CENTER_FREQUENCY.value]
+            message_center_frequency = message_center_frequency_array.value
+
+            # Standard arguments string for starting a netcat_airspyhf_subprocess
+            # Read the Security Considerations section before using shell=True
+            # elsewhere. It is used here since user input is a factor here.
+            # https://docs.python.org/3/library/subprocess.html#security-considerations
+            # Note: Using the -w argument within the Netcat call doesn't always work
+            # for Macos. The UAVRT system doesn't support Macos at the moment, so
+            # it is not a current concern.
+            # The timeout value has to be greater than 0 else the airspyhf_rx tool
+            # process will not stay alive.
+            netcat_airspyhf_standard_arguments_string = \
+                "/usr/local/bin/airspyhf_rx -f " + message_center_frequency + " -m on " \
+                "-a " + str(self._netcat_airspyhf_subprocess_sampling_rate) + \
+                " -r stdout -g on -l high -t 0 | netcat -w 1 -u localhost 10000"
             try:
                 if self._netcat_airspyhf_subprocess_counter >= self._netcat_airspyhf_subprocess_limit:
                     raise Exception(
@@ -163,6 +174,7 @@ class NetcatAirspyhfComponent(Node):
                 netcat_airspyhf_subprocess = Popen(
                     netcat_airspyhf_standard_arguments_string,
                     stdout=DEVNULL,
+                    preexec_fn=setsid,
                     shell=True)
                 # Add subprocess to collection
                 # We save the center frequency as well since we will
@@ -190,11 +202,13 @@ class NetcatAirspyhfComponent(Node):
                 # Iterate through subprocess dictionary and kill processes
                 for subprocess_hardware_id in self._netcat_airspyhf_subprocess_dictionary.keys():
                     # Kill process in collection
-                    self._netcat_airspyhf_subprocess_dictionary[subprocess_hardware_id][
-                        NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].kill
+                    killpg(getpgid(
+                        self._netcat_airspyhf_subprocess_dictionary[subprocess_hardware_id][
+                            NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].pid),
+                           SIGTERM)
                     # Remove subprocess from the collection
                     self._netcat_airspyhf_subprocess_dictionary.pop(
-                        message_hardware_id)
+                        subprocess_hardware_id)
                     # Decrement counter
                     self._netcat_airspyhf_subprocess_counter -= 1
                     # Log
@@ -204,6 +218,12 @@ class NetcatAirspyhfComponent(Node):
                 message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
                 self.get_logger().error("Type: {}".format(type(instance)))
                 self.get_logger().error("Message: {}".format(instance))
+            except RuntimeError as instance:
+                # Whenever the dictionary size changes during runtime, this
+                # error will be thrown. It is not fatal, so we catch, report,
+                # and move on.
+                self.get_logger().info("Type: {}".format(type(instance)))
+                self.get_logger().info("Message: {}".format(instance))
             finally:
                 # Publish status message using original message
                 self._status_publisher.publish(message)

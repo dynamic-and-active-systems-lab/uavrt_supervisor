@@ -21,6 +21,15 @@ from subprocess import Popen
 from subprocess import CalledProcessError
 from subprocess import DEVNULL
 
+# Using subprocess.Popen.kill() will not work when attempting to kill a
+# subproces that is started with the Shell=True argument. The SO link below
+# describes the correct process. 
+# https://stackoverflow.com/a/4791612
+from os import killpg
+from os import setsid
+from os import getpgid
+from signal import SIGTERM
+
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
 
@@ -143,10 +152,6 @@ class DetectorComponent(Node):
         message_message = message_status_array.message
         message_hardware_id = message_status_array.hardware_id
 
-        message_center_frequency_array = message_status_array.values[
-            KeyValueIndicesControl.CENTER_FREQUENCY.value]
-        message_center_frequency = message_center_frequency_array.value
-
         # Required export command to use the detectors
         # Points to the directory that contains the airspyhf_channelize exe
         # That directory should also contain the .so objects that were used to
@@ -179,6 +184,13 @@ class DetectorComponent(Node):
                                          type=SOCK_DGRAM)
 
         if message_message == "start":
+            # Control messages such as "stop" do no include a KeyValue array.
+            # Instead of creating a control callback for each control, we can
+            # set the center frequency within the "start" branch.
+            message_center_frequency_array = message_status_array.values[
+                KeyValueIndicesControl.CENTER_FREQUENCY.value]
+            message_center_frequency = message_center_frequency_array.value
+
             try:
                 if self._detector_subprocess_counter >= self._detector_subprocess_limit:
                     raise Exception(
@@ -188,9 +200,10 @@ class DetectorComponent(Node):
                     detector_standard_arguments_string,
                     executable='/bin/bash',
                     # stdout=DEVNULL,
+                    preexec_fn=setsid,
                     shell=True,
                     # CHANGE THIS CHANGE THIS CHANGE THIS
-                    #cwd=str(
+                    # cwd=str(
                     #    "/home/dasl/uavrt_workspace/uavrt_source/log/detector_log/config_example"),
                     env=airspyhf_channelize_export_string)
                 # We need to sleep the parent thread for a second to allow
@@ -230,20 +243,28 @@ class DetectorComponent(Node):
                 # Iterate through subprocess dictionary and kill processes
                 for subprocess_hardware_id in self._detector_subprocess_dictionary.keys():
                     # Kill process in collection
-                    self._detector_subprocess_dictionary[subprocess_hardware_id][
-                        DetectorSubprocessDictionary.DETECTOR_SUBPROCESS.value].kill
+                    killpg(getpgid(
+                        self._detector_subprocess_dictionary[subprocess_hardware_id][
+                            DetectorSubprocessDictionary.DETECTOR_SUBPROCESS.value].pid),
+                           SIGTERM)
                     # Remove subprocess from the collection
                     self._detector_subprocess_dictionary.pop(
                         subprocess_hardware_id)
                     # Decrement counter
                     self._detector_subprocess_counter -= 1
                     # Log
-                    self.get_logger().info("A airspyhf channelize subprocesses has been stopped.")
+                    self.get_logger().info("A detector subprocesses has been stopped.")
             except Exception as instance:
                 # Publish status message with ERROR level
                 message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
                 self.get_logger().error("Type: {}".format(type(instance)))
                 self.get_logger().error("Message: {}".format(instance))
+            except RuntimeError as instance:
+                # Whenever the dictionary size changes during runtime, this
+                # error will be thrown. It is not fatal, so we catch, report,
+                # and move on.
+                self.get_logger().info("Type: {}".format(type(instance)))
+                self.get_logger().info("Message: {}".format(instance))
             finally:
                 # Publish status message using original message
                 self._status_publisher.publish(message)

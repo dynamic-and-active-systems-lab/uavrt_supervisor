@@ -33,4 +33,5 @@ class AirspyhfChannelizeSubprocessDictionary(Enum):
     AIRSPYHF_CHANNELIZE_SUBPROCESS = 0
 
 class DetectorSubprocessDictionary(Enum):
-    AIRSPYHF_CHANNELIZE_SUBPROCESS = 0
+    CENTER_FREQUENCY = 0
+    DETECTOR_SUBPROCESS = 1
