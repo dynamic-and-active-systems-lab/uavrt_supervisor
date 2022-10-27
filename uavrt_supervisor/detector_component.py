@@ -162,7 +162,7 @@ class DetectorComponent(Node):
         #
         # Note: The source command used depends on the ROS 2 install.
         # The following code assumes the suggested Ubuntu install by ROS 2
-        # developers. This makes it a requirement. 
+        # developers. This makes it a requirement.
         # ". /opt/ros/galactic/setup.bash\n" + \
         detector_standard_arguments_string = \
             "source ~/ros2_galactic/install/local_setup.bash\n" + \
@@ -196,7 +196,7 @@ class DetectorComponent(Node):
                 # We need to sleep the parent thread for a second to allow
                 # the detector process time to start up.
                 # It's low complexity but dirty.
-                sleep(1)
+                sleep(5)
                 # Issue run command via UDP socket
                 # CHANGE THIS CHANGE THIS CHANGE THIS - SHOULD NOT BE A CONSTANT PORT
                 udp_send_command_socket.sendto(detector_run_byte,
