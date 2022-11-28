@@ -74,7 +74,7 @@ class NetcatAirspyhfComponent(Node):
         self._netcat_airspyhf_subprocess_counter = 0
         # Dictionary for storing netcat/airspyhf subprocess objects.
         self._netcat_airspyhf_subprocess_dictionary = {}
-        # Default (and current costant) supported sampling rate
+        # Default supported sampling rate
         self._netcat_airspyhf_subprocess_sampling_rate = 192000
 
         # Note: This needs to be swapped out with a logging configuration
@@ -235,7 +235,7 @@ class NetcatAirspyhfComponent(Node):
         sample_rate_value = KeyValue()
 
         # Iterate through subprocess collection, polling each subprocess
-        # Create new Diagnostic message. Publish as status
+        # Create new Diagnostic message, publish as status
         try:
             for subprocess_hardware_id in self._netcat_airspyhf_subprocess_dictionary.keys():
                 status_array.header.frame_id = "status"
@@ -262,24 +262,23 @@ class NetcatAirspyhfComponent(Node):
                         subprocess_hardware_id][NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].poll() != None:
                     status.level = b'2'
                     status.message = "dead"
-
                     # Kill process in collection
-                    self._netcat_airspyhf_subprocess_dictionary[
-                        subprocess_hardware_id][
-                        NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].kill
+                    killpg(getpgid(
+                        self._netcat_airspyhf_subprocess_dictionary[subprocess_hardware_id][
+                            NetcatAirspyhfSubprocessDictionary.NETCAT_AIRSPYHF_SUBPROCESS.value].pid),
+                           SIGTERM)
                     # Remove subprocess from the collection
                     self._netcat_airspyhf_subprocess_dictionary.pop(
                         subprocess_hardware_id)
                     # Decrement counter
                     self._netcat_airspyhf_subprocess_counter -= 1
-
                     self.get_logger().info(
                         "A netcat/airspyhf subprocesses has been stopped since it was dead.")
 
                 status_array.status.append(status)
-
                 # Publish status message
                 self._status_publisher.publish(status_array)
+
         # RuntimeError: Dictionary changed size during iteration.
         # It seems impossible to get away from this error. W/e collection
         # type we use, it must be modified during Runtime.

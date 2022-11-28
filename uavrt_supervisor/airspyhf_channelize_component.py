@@ -89,9 +89,9 @@ class AirspyfhChannelizeComponent(Node):
         self._airspyhf_channelize_subprocess_counter = 0
         # Dictionary for storing netcat/airspyhf subprocess objects.
         self._airspyhf_channelize_subprocess_dictionary = {}
-        # Default (and current costant) supported sampling rate
+        # Default supported sampling rate
         self._airspyhf_channelize_subprocess_sampling_rate = 192000
-        # Default (and current costant) supported decimation rate
+        # Default supported decimation rate
         self._airspyhf_channelize_subprocess_decimation_rate = 48
         # Directory where airspyhf_channelize is installed
         self._airspyhf_channelize_installation_directory = \
