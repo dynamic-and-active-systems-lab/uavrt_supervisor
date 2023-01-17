@@ -125,8 +125,10 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     # fCentOptionsValid = fCentOptionsLowerFreq <= fMin & fCentOptionsUpperFreq >= fMax;
     # fCentOptions = fCentOptions(fCentOptionsValid);
     # nValidCentFreqs = numel(fCentOptions);
-    
-    fCentOptions          = np.around(np.arange(fMin, fMax , 0.0001), 6)[:, np.newaxis]
+    if fMin != fMax:
+        fCentOptions      = np.around(np.arange(fMin, fMax , 0.0001), 6)[:, np.newaxis]
+    else:
+        fCentOptions      = fMax
 
     fCentOptionsUpperFreq = fCentOptions + radioBWUpper
 
@@ -362,5 +364,15 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
 
     return radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning
+
+
+
+
+# Fs = 192000         
+# nChannels = 48      
+# #tagFreqVecMHz = np.array([149.922727, 149.928381, 149.934261, 149.957471, 149.997192, 150.009001, 150.025413, 150.077912, 150.087777])
+# tagFreqVecMHz = np.array([150.328])
+# [radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
+
 
 
