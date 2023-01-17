@@ -322,6 +322,8 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     radioFc        = fCentOptions[selectedOptionInd]
 
     channelFcVec   = radioFc + channelVec
+    # Update channelFcVec to align with the channelizer channel order. 
+    channelFcVec    = np.roll(channelFcVec, int(-np.ceil(nChannels/2)))
 
     tagChannelFreqFunc = interpolate.interp1d(np.squeeze(channelFcVec), np.squeeze(channelFcVec),  kind = 'nearest', bounds_error = False, fill_value = 'extrapolate')
 
