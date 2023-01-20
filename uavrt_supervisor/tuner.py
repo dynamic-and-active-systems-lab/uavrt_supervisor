@@ -32,8 +32,6 @@ INPUTS:
                     MHz
     tagChannelNum   The index of the channel that each tag should be
                     present in 
-    tagFreqVecMHz   The same vector as the input tag list, but sorted to
-                    align with the tagChannelNumber
     tagChannelEdgeWarning   
                     A logical list that highlights tags that are
                     outside of the 90% of the bandwidth of their 
@@ -370,11 +368,12 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
 
 
-# Fs = 192000         
+# Fs = 375000 #Sample rate into channelizer
 # nChannels = 48      
-# #tagFreqVecMHz = np.array([149.922727, 149.928381, 149.934261, 149.957471, 149.997192, 150.009001, 150.025413, 150.077912, 150.087777])
-# tagFreqVecMHz = np.array([150.328])
+# # #tagFreqVecMHz = np.array([149.922727, 149.928381, 149.934261, 149.957471, 149.997192, 150.009001, 150.025413, 150.077912, 150.087777])
+# tagFreqVecMHz = np.array([150.328, 150.328, 150.276])
 # [radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
 
+# nChannels = 48
 
 
