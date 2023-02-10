@@ -30,9 +30,5 @@ Troubleshooting tips can be found here. (TBD)
 
 # License
 
-This codebase is released under the GNU Lesser General Public License v3 or later.
-
-# License
-
-This codebase is released under the GNU Lesser General Public License v3 or later.
+This codebase is released under the GNU General Public License v3.0.
 
