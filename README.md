@@ -1,6 +1,6 @@
 # UAV-RT Supervisor package
 
-This ROS 2 Node is responsible for enacting user commands onto and monitoring the airspyhf_rx/netcat processes, Airspyhf_channelizer process, and uavrt_detector processes running on the companion computer. This oversight can be expanded to additional processes (e.g. uavrt_localizer process) in the future. 
+This ROS 2 Node is responsible for enacting user commands onto and monitoring the airspy_csdr_netcat processes, channelizer process, and uavrt_detector processes running on the companion computer. This oversight can be expanded to additional processes (e.g. uavrt_localizer process) in the future. 
 
 The development of this code was funded via National Science Foundation grant no. 2104570.
 
