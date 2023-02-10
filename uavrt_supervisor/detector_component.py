@@ -23,7 +23,7 @@ from subprocess import DEVNULL
 
 # Using subprocess.Popen.kill() will not work when attempting to kill a
 # subproces that is started with the Shell=True argument. The SO link below
-# describes the correct process. 
+# describes the correct process.
 # https://stackoverflow.com/a/4791612
 from os import killpg
 from os import setsid
@@ -32,18 +32,6 @@ from signal import SIGTERM
 
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
-
-# https://docs.python.org/3/library/socket.html
-# Note: Some behavior may be platform dependent, since calls are made to the
-# operating system socket APIs.
-from socket import socket
-from socket import AF_INET
-from socket import SOCK_DGRAM
-
-# https://docs.python.org/3/library/time.html
-# Note: Use sparingly! Sleeping the main process will cause deadlock on that
-# thread.
-from time import sleep
 
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
@@ -68,6 +56,7 @@ from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
 # Enum values to describe the indice that is being accessed
+from uavrt_supervisor.enum_members_values import SubprocessConstants
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
 from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
 from uavrt_supervisor.enum_members_values import DetectorSubprocessDictionary
@@ -77,20 +66,19 @@ class DetectorComponent(Node):
     def __init__(self):
         super().__init__('DetectorComponent')
 
-        # Queue size is a required QoS (quality of service) setting that limits the
-        # amount of queued messages if a subscriber is not receiving them fast enough.
-        self._queue_size_ = 10
-        # Rate at which status timer messages will be checked and published in seconds.
-        self._status_timer_message_publish_rate = .5
         # This value can be increased/decreased
         self._detector_subprocess_limit = 5
         # Ensure that this counter is <= to the limit.
         self._detector_subprocess_counter = 0
         # Dictionary for storing detector subprocess objects.
         self._detector_subprocess_dictionary = {}
-        # Directory where airspyhf_channelize is installed
-        self._airspyhf_channelize_installation_directory = \
-            Path("./uavrt_source/portairspyhf_channelize").resolve()
+        # Directory where channelizer is installed
+        # Note: This directory is necessary to know here since the detectors
+        # rely on certain .so objects to run. All of those objects can be
+        # found in the channelizer directory, so we point there for the linking
+        # library export command.
+        self._channelizer_installation_directory = \
+            Path("./uavrt_source/portairspy_channelize").resolve()
         # Directory where ros 2 galactic local_setup.bash script is installed
         self._uavrt_workspace_installation_directory = \
             Path("./install/local_setup.bash").resolve()
@@ -120,7 +108,7 @@ class DetectorComponent(Node):
             DiagnosticArray,
             'control_detector_subprocess',
             self._control_callback_subscriber,
-            self._queue_size_)
+            SubprocessConstants.QUEUE_SIZE.value)
         self.get_logger().info(
             "Control subscriber is now subscribing to the 'control_detector_subprocess' topic.")
 
@@ -129,13 +117,13 @@ class DetectorComponent(Node):
         self._status_publisher = self.create_publisher(
             DiagnosticArray,
             'status_detector_subprocess',
-            self._queue_size_)
+            SubprocessConstants.QUEUE_SIZE.value)
         self.get_logger().info(
             "Status publisher is now publishing to the 'status_detector_subprocess' topic.")
 
     def _initialize_status_timer(self):
         self._status_timer = self.create_timer(
-            self._status_timer_message_publish_rate,
+            SubprocessConstants.STATUS_TIMER_MESSAGE_PUBLISH_RATE.value,
             self._status_timer_callback)
         self.get_logger().info(
             "Status timer is now publishing to the 'status_detector_subprocess' topic.")
@@ -152,44 +140,45 @@ class DetectorComponent(Node):
         message_message = message_status_array.message
         message_hardware_id = message_status_array.hardware_id
 
-        # Required export command to use the detectors
-        # Points to the directory that contains the airspyhf_channelize exe
-        # That directory should also contain the .so objects that were used to
-        # compile the executable.
-        # https://stackoverflow.com/a/64391542
-        airspyhf_channelize_export_string = {'LD_LIBRARY_PATH': str(
-            self._airspyhf_channelize_installation_directory), 'HOME': "/home/dasl"}
-
-        # Standard arguments string for starting a detector_subprocess
-        # This string assumes that the detector config files are located in
-        # ~/uavrt_workspace/uavrt_source/generated_tags
-        # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
-        #
-        # Note: The source command used depends on the ROS 2 install.
-        # The following code assumes the suggested Ubuntu install by ROS 2
-        # developers. This makes it a requirement.
-        # ". /opt/ros/galactic/setup.bash\n" + \
-        detector_standard_arguments_string = \
-            "source ~/ros2_galactic/install/local_setup.bash\n" + \
-            ". install/setup.bash\n" + \
-            "cd ~/uavrt_workspace/uavrt_source/log/detector_log/config_example\n" + \
-            "ros2 run uavrt_detection uavrt_detection"
-
-        # Required to switch detector process to "Run" state
-        # https://docs.python.org/3/library/stdtypes.html#int.to_bytes
-        detector_run_byte = (1).to_bytes(length=1,
-                                         byteorder='little')
-        # https://pythontic.com/modules/socket/udp-client-server-example
-        udp_send_command_socket = socket(family=AF_INET,
-                                         type=SOCK_DGRAM)
-
         if message_message == "start":
-            # Control messages such as "stop" do no include a KeyValue array.
+            # Control messages such as "stop" do not include a KeyValue array.
             # Instead of creating a control callback for each control, we can
             # set the center frequency within the "start" branch.
             message_center_frequency_array = message_status_array.values[
                 KeyValueIndicesControl.CENTER_FREQUENCY.value]
             message_center_frequency = message_center_frequency_array.value
+
+            message_config_path_array = message_status_array.values[
+                KeyValueIndicesControl.DETECTOR_CONFIG_PATH.value]
+            message_config_path = message_config_path_array.value
+
+            # Required export command to use the detectors
+            # Points to the directory that contains the airspyhf_channelize exe
+            # That directory should also contain the .so objects that were used to
+            # compile the executable.
+            # https://stackoverflow.com/a/64391542
+            channelizer_export_string = {'LD_LIBRARY_PATH': str(
+                self._channelizer_installation_directory), 'HOME': "/home/dasl"}
+
+            # Standard arguments string for starting a detector_subprocess
+            # This string assumes that the detector config files are located in
+            # ~/uavrt_workspace/uavrt_source/generated_tags
+            # Split separate commands with newline chars: https://stackoverflow.com/a/38187706
+            #
+            # Note: The source command used depends on the ROS 2 install.
+            # The following code assumes the suggested Ubuntu install by ROS 2
+            # developers. This makes it a requirement.
+            # ". /opt/ros/galactic/setup.bash\n" + \
+            #
+            # Also, the source source calls must be made from the workspace
+            # directory! You can not start the process in the detector config
+            # directory initially. You must start the process in the workspace and
+            # then CD into the config directory.
+            detector_standard_arguments_string = \
+                "source ~/ros2_galactic/install/local_setup.bash\n" + \
+                ". install/setup.bash\n" + \
+                "cd " + message_config_path + "\n" + \
+                "ros2 run uavrt_detection uavrt_detection"
 
             try:
                 if self._detector_subprocess_counter >= self._detector_subprocess_limit:
@@ -200,20 +189,13 @@ class DetectorComponent(Node):
                     detector_standard_arguments_string,
                     executable='/bin/bash',
                     # stdout=DEVNULL,
+                    # stderr=DEVNULL,
                     preexec_fn=setsid,
                     shell=True,
-                    # CHANGE THIS CHANGE THIS CHANGE THIS
                     # cwd=str(
                     #    "/home/dasl/uavrt_workspace/uavrt_source/log/detector_log/config_example"),
-                    env=airspyhf_channelize_export_string)
-                # We need to sleep the parent thread for a second to allow
-                # the detector process time to start up.
-                # It's low complexity but dirty.
-                sleep(5)
-                # Issue run command via UDP socket
-                # CHANGE THIS CHANGE THIS CHANGE THIS - SHOULD NOT BE A CONSTANT PORT
-                udp_send_command_socket.sendto(detector_run_byte,
-                                               self._detector_command_port)
+                    env=channelizer_export_string)
+
                 # Add subprocess to collection
                 # The hardware_id corresponds to a random int value between 1 and 100000
                 # There could be repeated hardware_ids but the chance is slim.

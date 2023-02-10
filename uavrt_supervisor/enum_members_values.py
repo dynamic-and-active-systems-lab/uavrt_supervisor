@@ -18,19 +18,44 @@
 # https://docs.python.org/3/library/enum.html
 from enum import Enum
 
+
+class SubprocessConstants(Enum):
+    # Queue size is a required QoS (quality of service) setting that limits the
+    # amount of queued messages if a subscriber is not receiving them fast enough.
+    QUEUE_SIZE = 10
+    # Rate at which status timer messages will be checked and published in seconds.
+    STATUS_TIMER_MESSAGE_PUBLISH_RATE = .5
+    # Default radio sampling rate
+    RADIO_SAMPLING_RATE = 3000000
+    # Default channelizer sampling rate
+    CHANNELIZER_SAMPLING_RATE = 375000
+    # Default channelizer decimation rate
+    CHANNELIZER_DECIMATION_RATE = 100
+
+
+class TunerOutputConstants(Enum):
+    RADIO_CENTER_FREQENCY = 0
+    CENTER_CHANNEL_FREQUENCIES = 1
+    TAG_CHANNEL_NUMBER = 2
+
+
 class DiagnosticStatusIndicesControl(Enum):
     DIAGNOSTIC_STATUS = 0
+
 
 class KeyValueIndicesControl(Enum):
     CENTER_FREQUENCY = 0
     DETECTOR_CONFIG_PATH = 1
 
-class NetcatAirspyhfSubprocessDictionary(Enum):
-    CENTER_FREQUENCY = 0
-    NETCAT_AIRSPYHF_SUBPROCESS = 1
 
-class AirspyhfChannelizeSubprocessDictionary(Enum):
-    AIRSPYHF_CHANNELIZE_SUBPROCESS = 0
+class AirspyCSDRNetcatComponentSubprocessDictionary(Enum):
+    CENTER_FREQUENCY = 0
+    AIRSPY_CSDR_NETCAT_SUBPROCESS = 1
+
+
+class ChannelizerSubprocessDictionary(Enum):
+    CHANNELIZER_SUBPROCESS = 0
+
 
 class DetectorSubprocessDictionary(Enum):
     CENTER_FREQUENCY = 0

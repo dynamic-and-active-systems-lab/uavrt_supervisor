@@ -9,43 +9,43 @@
 TUNER.PY Selects the radio center frequency well. This functions tries
 to pick the radio center frequency that minimizes the number of tags in
 each channel and then minimizes the edge cost. The channel edge cost is
-defined such that tags within 7.5% of the channel edges received a cost 
-that is higher the closer they are to the edge. Cost is defined as 
+defined such that tags within 7.5% of the channel edges received a cost
+that is higher the closer they are to the edge. Cost is defined as
 infinite for being located at the channel edge. Cost is minimize in order
-to locate tag frequencies away from of each channel's shoulder rolloff. 
+to locate tag frequencies away from of each channel's shoulder rolloff.
 
-The program also provides various outputs associate with the channels 
-that are all defined below in the outputs section. The program will raise 
+The program also provides various outputs associate with the channels
+that are all defined below in the outputs section. The program will raise
 an exception if the frequencies between the input tag definitions is larger
-than the radio bandwidth. 
+than the radio bandwidth.
 
 INPUTS:
-    Fs              Positive scalar of number of samples per second (Hz) 
-                    of the  radio. 
+    Fs              Positive scalar of number of samples per second (Hz)
+                    of the  radio.
     nChannels       Number of channels the radio data is split into.
 
     tagFreqVecMHz   A vector of tag transmission frequencies in MHz
- 
+
  OUTPUTS:
     radioFc         Optimal radio center frequency in MHz
     channelFcVec    The center frequencies of each channel (ascending) in
                     MHz
     tagChannelNum   The index of the channel that each tag should be
-                    present in 
-    tagChannelEdgeWarning   
+                    present in
+    tagChannelEdgeWarning
                     A logical list that highlights tags that are
-                    outside of the 90% of the bandwidth of their 
+                    outside of the 90% of the bandwidth of their
                     channel to highlight tags that might be on the
-                    rolloff shoulders of a channel. 
-    multipleTagsInChannelWarning   
+                    rolloff shoulders of a channel.
+    multipleTagsInChannelWarning
                     A single logical to warn calling
                     function that there will be multiple tags in a single
-                    channel. 
+                    channel.
 
 EXAMPLES:
 
-Fs = 192000         
-nChannels = 48      
+Fs = 192000
+nChannels = 48
 tagFreqVecMHz = np.array([149.922727, 149.928381, 149.934261, 149.957471, 149.997192, 150.009001, 150.025413, 150.077912, 150.087777])
 [radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
 
@@ -57,7 +57,7 @@ from time import sleep
 # ---------------------------------------------------------------------------
 
 def tuner(Fs, nChannels, tagFreqVecMHz):
-    
+
     # bwFlatFrac    = 0.9;
     # tagFreqVecMHz = tagFreqVecMHz(:);%Force column vector
     # tagFreqVecMHz = sort(tagFreqVecMHz);
@@ -71,8 +71,8 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     bwFlatFrac    = 0.85 #Definition for channel edge warning
 
     tagFreqVecMHz = np.around(tagFreqVecMHz, 6)[:, np.newaxis] #make column vector
-    
-    tagFreqVecMHz = np.sort(tagFreqVecMHz) 
+
+    tagFreqVecMHz = np.sort(tagFreqVecMHz)
 
     nTags         = np.size(tagFreqVecMHz)
 
@@ -87,7 +87,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     fMin          = np.amin(tagFreqVecMHz);
 
     fMax          = np.amax(tagFreqVecMHz);
- 
+
     # if fMax-fMin > Fs
     #     error('UAV-RT: Max difference in tag frequencies must be less than the radio sample rate input Fs.')
     # end
@@ -110,7 +110,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
     else:
         channelVec = 10**-6*np.arange(-fNyq, fNyq, channelBWHz)[:, np.newaxis]
-    
+
     radioBWUpper = abs(np.amax(channelVec))+channelBWMHz/2
 
     radioBWLower = abs(np.amin(channelVec))+channelBWMHz/2
@@ -139,7 +139,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     nValidCentFreqs       = np.size(fCentOptions)
 
     # %Here we will investigate each center frequency option and calculate the
-    # %distance to the channel edges for each tag. 
+    # %distance to the channel edges for each tag.
     # freqError = zeros(size(fCentOptions));
     # freqDistToChannelEdge = zeros(nValidCentFreqs, nTags);
     # for i = 1:nValidCentFreqs
@@ -150,7 +150,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     #     freqError(i) = sum(abs(nearestCenterFreq - tagFreqVecMHz));
     # end
     # %Deal with numerical precision. Round to integer Hz
-    # freqDistToChannelEdge = round(freqDistToChannelEdge,6); 
+    # freqDistToChannelEdge = round(freqDistToChannelEdge,6);
 
 
     freqDistToChannelEdge = np.zeros((nValidCentFreqs, nTags))
@@ -167,7 +167,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
         freqDistToChannelEdge[i,:] = np.transpose(channelBWMHz/2 - abs(freqErrorAllTags))
 
     # %Deal with numerical precision. Round to integer Hz
-    freqDistToChannelEdge     = np.around(freqDistToChannelEdge, decimals = 6); 
+    freqDistToChannelEdge     = np.around(freqDistToChannelEdge, decimals = 6);
 
     # %Flag those tags near a channel edge and assign a cost. Zero cost if not
     # %near edge.
@@ -183,15 +183,15 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     channelEdgeCostAllTag[~nearChannelEdgeLogic] = 0
 
     channelEdgeCost       = np.sum(channelEdgeCostAllTag, axis = 1)[:, np.newaxis]
-   
+
     # %Ideally, we'd choose the center frequency that minimizes cost, but
     # %we also need to minimize the number of tags in each channel. Having one
     # %tag per channel is the prioity. Minimize the number of tags per
     # %channel first and then of those that minimize, pick the one that minimize
-    # %the tag near channel edge cost. 
+    # %the tag near channel edge cost.
 
     # %Here we calculate the number of tags per channel for each of the different
-    # %center frequency options. 
+    # %center frequency options.
     # tagsPerChannelMat = zeros(nChannels, nValidCentFreqs);
     # for j = 1:nValidCentFreqs
     #     centerFreqs = fCentOptions(j) + channelVec;
@@ -283,7 +283,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
         tick2 = tick2 + 2
 
     # %There may be multiple options where tags per channel is minimized, as is
-    # %tag channel edge cost. They are all acceptable options. Of all the 
+    # %tag channel edge cost. They are all acceptable options. Of all the
     # %acceptable options, choose that closes to the centroid of the tag list
     # acceptableFreqs        = fCentOptions(acceptableFreqLogic);
     # freqInds               = 1:numel(fCentOptions);
@@ -320,7 +320,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     radioFc        = fCentOptions[selectedOptionInd]
 
     channelFcVec   = radioFc + channelVec
-    # Update channelFcVec to align with the channelizer channel order. 
+    # Update channelFcVec to align with the channelizer channel order.
     channelFcVec    = np.roll(channelFcVec, int(-np.ceil(nChannels/2)))
 
     tagChannelFreqFunc = interpolate.interp1d(np.squeeze(channelFcVec), np.squeeze(channelFcVec),  kind = 'nearest', bounds_error = False, fill_value = 'extrapolate')
@@ -335,7 +335,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
     for i in range(0, nTags):
         tagChannelNum[i] = np.flatnonzero(channelFcVec == tagChannelFreq[i])
-    
+
     tagChannelEdgeWarning        = np.abs(tagFreqOffestMHz) > channelBWMHz/2-shoulderWidthMHz/2 #bwFlatFrac*channelBWMHz/2
 
     multipleTagsInChannelWarning = np.size(tagChannelNum) != np.size(np.unique(tagChannelNum))
@@ -358,22 +358,21 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 #         channelVec = 10**-6*np.arange(-freqStep*np.floor(nChannels/2),Fs/2+freqStep,freqStep)[:, np.newaxis]
 #     else:
 #         channelVec = 10**-6*np.arange(-Fs/2, Fs/2, freqStep)[:, np.newaxis]
+
+
+
+
+    # Note: radioFc will return as a list unless you specify which element you want to return.
     
-
-   
-
-
-    return radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning
+    return radioFc[0],channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning
 
 
 
 
 # Fs = 375000 #Sample rate into channelizer
-# nChannels = 48      
+# nChannels = 48
 # # #tagFreqVecMHz = np.array([149.922727, 149.928381, 149.934261, 149.957471, 149.997192, 150.009001, 150.025413, 150.077912, 150.087777])
 # tagFreqVecMHz = np.array([150.328, 150.328, 150.276])
 # [radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
 
 # nChannels = 48
-
-

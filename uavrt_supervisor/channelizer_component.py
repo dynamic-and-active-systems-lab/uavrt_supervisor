@@ -33,18 +33,6 @@ from signal import SIGTERM
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
 
-# https://docs.python.org/3/library/socket.html
-# Note: Some behavior may be platform dependent, since calls are made to the
-# operating system socket APIs.
-from socket import socket
-from socket import AF_INET
-from socket import SOCK_DGRAM
-
-# https://docs.python.org/3/library/time.html
-# Note: Use sparingly! Sleeping the main process will cause deadlock on that
-# thread.
-from time import sleep
-
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
 # https://docs.ros2.org/galactic/api/rclpy/api/logging.html
@@ -68,43 +56,32 @@ from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
 # Enum values to describe the indice that is being accessed
+from uavrt_supervisor.enum_members_values import SubprocessConstants
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
-from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
-from uavrt_supervisor.enum_members_values import AirspyhfChannelizeSubprocessDictionary
+from uavrt_supervisor.enum_members_values import ChannelizerSubprocessDictionary
 
 
-class AirspyfhChannelizeComponent(Node):
+class ChannelizerComponent(Node):
     def __init__(self):
-        super().__init__('AirspyfhChannelizeComponent')
+        super().__init__('ChannelizerComponent')
 
-        # Queue size is a required QoS (quality of service) setting that limits the
-        # amount of queued messages if a subscriber is not receiving them fast enough.
-        self._queue_size_ = 10
-        # Rate at which status timer messages will be checked and published in seconds.
-        self._status_timer_message_publish_rate = .5
-        # This value can be increased but the number of netcat_airspyhf
+        # This value can be increased but the number of airspy_csdr_netcat
         # subprocesses needs to increase as well.
-        self._airspyhf_channelize_subprocess_limit = 1
+        self._channelizer_subprocess_limit = 1
         # Ensure that this counter is <= to the limit.
-        self._airspyhf_channelize_subprocess_counter = 0
-        # Dictionary for storing netcat/airspyhf subprocess objects.
-        self._airspyhf_channelize_subprocess_dictionary = {}
-        # Default supported sampling rate
-        self._airspyhf_channelize_subprocess_sampling_rate = 192000
-        # Default supported decimation rate
-        self._airspyhf_channelize_subprocess_decimation_rate = 48
-        # Directory where airspyhf_channelize is installed
-        self._airspyhf_channelize_installation_directory = \
-            Path("./uavrt_source/portairspyhf_channelize").resolve()
-        # Receive port for function control commands
-        self._airspyhf_channelize_command_port = ("127.0.0.1", 10001)
+        self._channelizer_subprocess_counter = 0
+        # Dictionary for storing channelizer subprocess objects.
+        self._channelizer_subprocess_dictionary = {}
+        # Directory where the channelizer is installed
+        self._channelizer_installation_directory = \
+            Path("./uavrt_source/portairspy_channelize").resolve()
 
         # Note: This needs to be swapped out with a logging configuration
         # that goes with a launch file.
         self.get_logger().set_level(LoggingSeverity.INFO)
         self.get_logger().info("Logging severity has been set to info.")
 
-        self.get_logger().info("Airspy Channelize Component has been created.")
+        self.get_logger().info("Channelizer Component has been created.")
 
         # Control subscriber
         self._initialize_control_subscriber()
@@ -119,27 +96,27 @@ class AirspyfhChannelizeComponent(Node):
         # Format: Msg type, topic, callback, queue size
         self._control_subscriber = self.create_subscription(
             DiagnosticArray,
-            'control_airspyhf_channelize_subprocess',
+            'control_channelizer_subprocess',
             self._control_callback_subscriber,
-            self._queue_size_)
+            SubprocessConstants.QUEUE_SIZE.value)
         self.get_logger().info(
-            "Control subscriber is now subscribing to the 'control_airspyhf_channelize_subprocess' topic.")
+            "Control subscriber is now subscribing to the 'control_channelizer_subprocess' topic.")
 
     def _initialize_status_publisher(self):
         # Format: Msg type, topic, queue size
         self._status_publisher = self.create_publisher(
             DiagnosticArray,
-            'status_airspyhf_channelize_subprocess',
-            self._queue_size_)
+            'status_channelizer_subprocess',
+            SubprocessConstants.QUEUE_SIZE.value)
         self.get_logger().info(
-            "Status publisher is now publishing to the 'status_airspyhf_channelize_subprocess' topic.")
+            "Status publisher is now publishing to the 'status_channelizer_subprocess' topic.")
 
     def _initialize_status_timer(self):
         self._status_timer = self.create_timer(
-            self._status_timer_message_publish_rate,
+            SubprocessConstants.STATUS_TIMER_MESSAGE_PUBLISH_RATE.value,
             self._status_timer_callback)
         self.get_logger().info(
-            "Status timer is now publishing to the 'status_airspyhf_channelize_subprocess' topic.")
+            "Status timer is now publishing to the 'status_channelizer_subprocess' topic.")
 
     def _control_callback_subscriber(self, message):
         message_type = message.header.frame_id
@@ -158,52 +135,41 @@ class AirspyfhChannelizeComponent(Node):
         # That directory should also contain the .so objects that were used to
         # compile the executable.
         # https://stackoverflow.com/a/64391542
-        airspyhf_channelize_export_string = {'LD_LIBRARY_PATH': str(
-            self._airspyhf_channelize_installation_directory)}
+        # export LD_LIBRARY_PATH=/home/dasl/uavrt_workspace/uavrt_source/portairspy_channelize
+        channelizer_export_string = {'LD_LIBRARY_PATH': str(
+            self._channelizer_installation_directory)}
 
-        # Standard arguments string for starting a airspyhf_channelize_subprocess
-        # This string assumes that the airspyhf_channelize executable was
-        # installed in ~/uavrt_workspace/uavrt_source/portairspyhf_channelize
-        airspyhf_channelize_standard_arguments_string = "./airspyhf_channelize " + \
-            str(self._airspyhf_channelize_subprocess_sampling_rate) + \
-            " " + str(self._airspyhf_channelize_subprocess_decimation_rate)
-
-        # Required to switch airspyhf_channelize process to "Run" state
-        # https://docs.python.org/3/library/stdtypes.html#int.to_bytes
-        airspyhf_channelize_run_byte = (1).to_bytes(length=1,
-                                                    byteorder='little')
-        # https://pythontic.com/modules/socket/udp-client-server-example
-        udp_send_command_socket = socket(family=AF_INET,
-                                         type=SOCK_DGRAM)
+        # Standard arguments string for starting a channelizer subprocess
+        # This string assumes that the channelizer executable was
+        # installed in ~/uavrt_source/portairspy_channelize
+        channelizer_standard_arguments_string = "./airspy_channelize " + \
+            str(SubprocessConstants.CHANNELIZER_SAMPLING_RATE.value) + \
+            " " + str(SubprocessConstants.CHANNELIZER_DECIMATION_RATE.value)
 
         if message_message == "start":
             try:
-                if self._airspyhf_channelize_subprocess_counter >= self._airspyhf_channelize_subprocess_limit:
+                if (self._channelizer_subprocess_counter >=
+                        self._channelizer_subprocess_limit):
                     raise Exception(
-                        "The limit of airspyhf channelize subprocesses been reached.")
+                        "The limit of channelizer subprocesses been reached.")
                 # Start the new subprocess
-                airspyhf_channelize_subprocess = Popen(
-                    airspyhf_channelize_standard_arguments_string,
+                channelizer_subprocess = Popen(
+                    channelizer_standard_arguments_string,
                     stdout=DEVNULL,
+                    stderr=DEVNULL,
                     preexec_fn=setsid,
                     shell=True,
                     cwd=str(
-                        self._airspyhf_channelize_installation_directory),
-                    env=airspyhf_channelize_export_string)
-                # We need to sleep the parent thread for a second to allow
-                # the airspyhf_channelize process time to start up.
-                # It's low complexity but dirty.
-                sleep(1)
-                # Issue run command via UDP socket
-                udp_send_command_socket.sendto(airspyhf_channelize_run_byte,
-                                               self._airspyhf_channelize_command_port)
+                        self._channelizer_installation_directory),
+                    env=channelizer_export_string)
+
                 # Add subprocess to collection
-                self._airspyhf_channelize_subprocess_dictionary[message_hardware_id] = \
-                    [airspyhf_channelize_subprocess]
+                self._channelizer_subprocess_dictionary[message_hardware_id] = \
+                    [channelizer_subprocess]
                 # Increment counter
-                self._airspyhf_channelize_subprocess_counter += 1
+                self._channelizer_subprocess_counter += 1
                 # Log
-                self.get_logger().info("A new airspyhf channelize subprocesses has been started.")
+                self.get_logger().info("A new channelizer subprocess has been started.")
             except (CalledProcessError, Exception) as instance:
                 # Publish status message with ERROR level
                 message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
@@ -215,23 +181,23 @@ class AirspyfhChannelizeComponent(Node):
 
         elif message_message == "stop" and message_hardware_id == "stop all":
             try:
-                if self._airspyhf_channelize_subprocess_counter <= 0:
+                if self._channelizer_subprocess_counter <= 0:
                     raise Exception(
-                        "The number of netcat/airspyhf subprocesses is already 0.")
+                        "The number of channelizer subprocesses is already 0.")
                 # Iterate through subprocess dictionary and kill processes
-                for subprocess_hardware_id in self._airspyhf_channelize_subprocess_dictionary.keys():
+                for subprocess_hardware_id in self._channelizer_subprocess_dictionary.keys():
                     # Kill process in collection
                     killpg(getpgid(
-                        self._airspyhf_channelize_subprocess_dictionary[subprocess_hardware_id][
-                            AirspyhfChannelizeSubprocessDictionary.AIRSPYHF_CHANNELIZE_SUBPROCESS.value].pid),
+                        self._channelizer_subprocess_dictionary[subprocess_hardware_id][
+                            ChannelizerSubprocessDictionary.CHANNELIZER_SUBPROCESS.value].pid),
                            SIGTERM)
                     # Remove subprocess from the collection
-                    self._airspyhf_channelize_subprocess_dictionary.pop(
+                    self._channelizer_subprocess_dictionary.pop(
                         subprocess_hardware_id)
                     # Decrement counter
-                    self._airspyhf_channelize_subprocess_counter -= 1
+                    self._channelizer_subprocess_counter -= 1
                     # Log
-                    self.get_logger().info("A airspyhf channelize subprocesses has been stopped.")
+                    self.get_logger().info("A channelizer subprocesses has been stopped.")
             except Exception as instance:
                 # Publish status message with ERROR level
                 message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'

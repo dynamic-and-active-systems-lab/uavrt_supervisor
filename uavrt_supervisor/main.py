@@ -36,8 +36,8 @@ from rclpy.logging import get_logger
 # This Stackoverflow question/answer helped me figured out this issue:
 # https://stackoverflow.com/a/58504978
 from uavrt_supervisor.start_stop_component import StartStopComponent
-from uavrt_supervisor.netcat_airspyhf_component import NetcatAirspyhfComponent
-from uavrt_supervisor.airspyhf_channelize_component import AirspyfhChannelizeComponent
+from uavrt_supervisor.airspy_csdr_netcat_component import AirspyCSDRNetcatComponent
+from uavrt_supervisor.channelizer_component import ChannelizerComponent
 from uavrt_supervisor.detector_component import DetectorComponent
 
 
@@ -47,13 +47,13 @@ def main(args=None):
     executor = SingleThreadedExecutor()
 
     start_stop_component = StartStopComponent()
-    netcat_airspyhf_component = NetcatAirspyhfComponent()
-    airspyhf_channelize_component = AirspyfhChannelizeComponent()
+    airspy_csdr_netcat_component = AirspyCSDRNetcatComponent()
+    channelizer_component = ChannelizerComponent()
     detector_component = DetectorComponent()
 
     executor.add_node(start_stop_component)
-    executor.add_node(netcat_airspyhf_component)
-    executor.add_node(airspyhf_channelize_component)
+    executor.add_node(airspy_csdr_netcat_component)
+    executor.add_node(channelizer_component)
     executor.add_node(detector_component)
 
     try:
