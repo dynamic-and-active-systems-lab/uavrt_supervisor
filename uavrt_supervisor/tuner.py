@@ -72,9 +72,13 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
     tagFreqVecMHz = np.around(tagFreqVecMHz, 6)[:, np.newaxis] #make column vector
 
-    tagFreqVecMHz = np.sort(tagFreqVecMHz)
+    tagFreqVecMHzSorted = np.sort(tagFreqVecMHz , 0)
+    
+    sortedInds    = np.argsort(tagFreqVecMHz , 0) 
 
-    nTags         = np.size(tagFreqVecMHz)
+    inputFreqOrder = np.argsort(sortedInds , 0 )
+
+    nTags         = np.size(tagFreqVecMHzSorted)
 
     channelBWHz   = Fs/nChannels
 
@@ -84,10 +88,10 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
     fNyq          = Fs/2;
 
-    fMin          = np.amin(tagFreqVecMHz);
+    fMin          = np.amin(tagFreqVecMHzSorted);
 
-    fMax          = np.amax(tagFreqVecMHz);
-
+    fMax          = np.amax(tagFreqVecMHzSorted);
+ 
     # if fMax-fMin > Fs
     #     error('UAV-RT: Max difference in tag frequencies must be less than the radio sample rate input Fs.')
     # end
@@ -144,10 +148,10 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     # freqDistToChannelEdge = zeros(nValidCentFreqs, nTags);
     # for i = 1:nValidCentFreqs
     #     centerFreqs = fCentOptions(i) + channelVec;
-    #     nearestCenterFreq = interp1(centerFreqs,centerFreqs,tagFreqVecMHz,'nearest','extrap');
-    #     freqErrorAllTags = nearestCenterFreq - tagFreqVecMHz;
+    #     nearestCenterFreq = interp1(centerFreqs,centerFreqs,tagFreqVecMHzSorted,'nearest','extrap');
+    #     freqErrorAllTags = nearestCenterFreq - tagFreqVecMHzSorted;
     #     freqDistToChannelEdge(i,:) = (channelBWMHz/2 - abs(freqErrorAllTags)).';
-    #     freqError(i) = sum(abs(nearestCenterFreq - tagFreqVecMHz));
+    #     freqError(i) = sum(abs(nearestCenterFreq - tagFreqVecMHzSorted));
     # end
     # %Deal with numerical precision. Round to integer Hz
     # freqDistToChannelEdge = round(freqDistToChannelEdge,6);
@@ -160,9 +164,9 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
         nearestCenterFreqFunc = interpolate.interp1d(centerFreqs, centerFreqs, kind = 'nearest', bounds_error = False, fill_value = 'extrapolate')
 
-        nearestCenterFreq     = nearestCenterFreqFunc( tagFreqVecMHz )
+        nearestCenterFreq     = nearestCenterFreqFunc( tagFreqVecMHzSorted )
 
-        freqErrorAllTags      = nearestCenterFreq - tagFreqVecMHz
+        freqErrorAllTags      = nearestCenterFreq - tagFreqVecMHzSorted
 
         freqDistToChannelEdge[i,:] = np.transpose(channelBWMHz/2 - abs(freqErrorAllTags))
 
@@ -199,8 +203,8 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     #     fEdgeUpper  = centerFreqs+channelBWMHz;
     #     inBandLogic = zeros(nChannels, nTags);
     #     for i = 1:nTags
-    #       inBandLogic(:,i) = ( tagFreqVecMHz(i) > fEdgeLower ) & ...
-    #                          ( tagFreqVecMHz(i) <= fEdgeUpper );
+    #       inBandLogic(:,i) = ( tagFreqVecMHzSorted(i) > fEdgeLower ) & ...
+    #                          ( tagFreqVecMHzSorted(i) <= fEdgeUpper );
     #     end
     #     tagsPerChannelMat(:,j) = sum(inBandLogic, 2);
     # end
@@ -219,7 +223,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
         inBandLogic = np.zeros( (nChannels, nTags) )
 
         for i in range(0, nTags):
-            inBandLogic[:,i] = np.squeeze(np.logical_and(( tagFreqVecMHz[i] > fEdgeLower ) , ( tagFreqVecMHz[i] <= fEdgeUpper )))
+            inBandLogic[:,i] = np.squeeze(np.logical_and(( tagFreqVecMHzSorted[i] > fEdgeLower ) , ( tagFreqVecMHzSorted[i] <= fEdgeUpper )))
 
         tagsPerChannelMat[:, j] = np.sum(inBandLogic, axis = 1)
 
@@ -288,7 +292,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     # acceptableFreqs        = fCentOptions(acceptableFreqLogic);
     # freqInds               = 1:numel(fCentOptions);
     # acceptableFreqsInds    = freqInds(acceptableFreqLogic);
-    # [~,indSel]             = min( abs( acceptableFreqs - mean(tagFreqVecMHz) ) );
+    # [~,indSel]             = min( abs( acceptableFreqs - mean(tagFreqVecMHzSorted) ) );
     # selectedOptionInd      = acceptableFreqsInds( indSel );
 
     acceptableFreqs        = fCentOptions[acceptableFreqLogic]
@@ -297,17 +301,17 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
     acceptableFreqsInds    = freqInds[acceptableFreqLogic]
 
-    indSel                 = np.argmin( abs( acceptableFreqs - np.mean(tagFreqVecMHz) ) )
+    indSel                 = np.argmin( abs( acceptableFreqs - np.mean(tagFreqVecMHzSorted) ) )
 
     selectedOptionInd      = acceptableFreqsInds[ indSel ]
 
     # %Begin calculation of the output parameters
     # radioFc        = fCentOptions(selectedOptionInd);
     # channelFcVec   = radioFc + channelVec;
-    # tagChannelFreq = interp1(channelFcVec, channelFcVec, tagFreqVecMHz,...
+    # tagChannelFreq = interp1(channelFcVec, channelFcVec, tagFreqVecMHzSorted,...
     #                          'nearest','extrap');
     # %How far off from channel center freq?
-    # tagFreqOffestMHz = tagFreqVecMHz - tagChannelFreq;
+    # tagFreqOffestMHz = tagFreqVecMHzSorted - tagChannelFreq;
     # %Determine which channel each tag will be in
     # tagChannelNum = zeros(nTags,1);
     # for i = 1:nTags
@@ -325,10 +329,10 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
     tagChannelFreqFunc = interpolate.interp1d(np.squeeze(channelFcVec), np.squeeze(channelFcVec),  kind = 'nearest', bounds_error = False, fill_value = 'extrapolate')
 
-    tagChannelFreq = tagChannelFreqFunc(tagFreqVecMHz)
+    tagChannelFreq = tagChannelFreqFunc(tagFreqVecMHzSorted)
 
     # %How far off from channel center freq?
-    tagFreqOffestMHz = tagFreqVecMHz - tagChannelFreq
+    tagFreqOffestMHz = tagFreqVecMHzSorted - tagChannelFreq
 
     # %Determine which channel each tag will be in
     tagChannelNum = np.zeros((nTags,1))
@@ -345,6 +349,11 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     fEdgeUpper  = np.around(channelFcVec + channelBWMHz/2*10**-6, decimals = 2)
 
     channelEdgeFreqs = np.unique(np.concatenate((fEdgeLower, fEdgeUpper), axis = 0))[:, np.newaxis]
+
+    #Sort outputs to match input frequency list
+    tagChannelEdgeWarning = tagChannelEdgeWarning[inputFreqOrder, 0]
+    
+    tagChannelNum         = 1 + tagChannelNum[inputFreqOrder, 0]
 
 #     # %Determine the channel center frequecies away from baseband
 #     # if mod(nChannels,2)~=0
@@ -369,10 +378,13 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
 
 
+#Fs = 375000 #Sample rate into channelizer
+#nChannels = 48
 # Fs = 375000 #Sample rate into channelizer
 # nChannels = 48
 # # #tagFreqVecMHz = np.array([149.922727, 149.928381, 149.934261, 149.957471, 149.997192, 150.009001, 150.025413, 150.077912, 150.087777])
-# tagFreqVecMHz = np.array([150.328, 150.328, 150.276])
-# [radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
-
+#tagFreqVecMHz = np.array([150.328, 150.328, 150.276])
+#tagFreqVecMHz = np.array([150.328])
+#[radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
+#print(tagChannelNum)
 # nChannels = 48
