@@ -55,7 +55,7 @@ from diagnostic_msgs.msg import KeyValue
 from std_msgs.msg import Bool
 
 # Custom uavrt message types
-from uavrt_interfaces.msg import TagDef
+from uavrt_interfaces.msg import Tag
 
 # Radio tuner functionality to find new center frequencies for tags
 from uavrt_supervisor.tuner import tuner
@@ -114,7 +114,7 @@ class StartStopComponent(Node):
     def _initialize_store_tag_information_subscriber(self):
         # Format: Msg type, topic, callback, queue size
         self._store_tag_information_subscriber = self.create_subscription(
-            TagDef,
+            Tag,
             'store_tag_information',
             self._store_tag_information_callback,
             SubprocessConstants.QUEUE_SIZE.value)
@@ -203,7 +203,7 @@ class StartStopComponent(Node):
             self._radio_center_frequency = radio_tuner_output[
                 TunerOutputConstants.RADIO_CENTER_FREQENCY.value]
 
-            # The center frequencies of each channel(ascending) in MHz
+            # The center frequencies of each channel (ascending) in MHz
             center_channel_frequency_list = radio_tuner_output[
                 TunerOutputConstants.CENTER_CHANNEL_FREQUENCIES.value]
 
@@ -305,7 +305,7 @@ class StartStopComponent(Node):
         # Converting POSIX time to UTC in the format of year, month, day, hour,
         # minute, second
         converted_time = strftime(
-            '%Y-%m-%d_%H:%M:%S', gmtime(time()))
+            '%Y-%m-%d_%H-%M-%S', gmtime(time()))
 
         # New flight directory name
         flight_log_directory_name = "flight_log_" + converted_time
@@ -335,10 +335,10 @@ class StartStopComponent(Node):
         detector_logging_directory_path.mkdir()
 
         # Make individual detector directories
-        for tag_object in range(len(self._tag_object_list)):
+        for iteration in range(len(self._tag_object_list)):
 
             detector_specific_directory_path = Path(detector_logging_directory_path,
-                                                    "tag_id_{}".format(self._tag_object_list[tag_object].tag_id))
+                                                    "tag_id_{}".format(self._tag_object_list[iteration].tag_id))
 
             detector_specific_directory_path.mkdir()
 
@@ -359,7 +359,8 @@ class StartStopComponent(Node):
             self._config_path_list.append(detector_specific_directory_path)
 
             self._create_config_file(
-                self._tag_object_list[tag_object],
+                self._tag_object_list[iteration],
+                iteration,
                 config_directory_path,
                 output_directory_path,
                 center_channel_frequency_list,
@@ -367,6 +368,7 @@ class StartStopComponent(Node):
 
     def _create_config_file(self,
                             tag_object,
+                            iteration,
                             config_directory_path,
                             output_directory_path,
                             center_channel_frequency_list,
@@ -378,12 +380,15 @@ class StartStopComponent(Node):
         data_bin_path = Path(output_directory_path, "data_record.bin")
 
         # Note: Minus 1 since value of tag ids start at 1
-        tag_index_value = int(tag_channel_number_list[tag_object.tag_id - 1])
+        # TODO: Check if this tag is an odd or even tag. Add 1 to odd tag port
+        # number. 
+        tag_index_value = int(tag_channel_number_list[iteration])
         # Center channel frequency for associated tag
         center_frequency = float(
             center_channel_frequency_list[tag_index_value])
 
         # Port number for incoming data
+        # TODO: Subtract 1 from here
         port_number_data = str(20000 + tag_index_value)
         # Port number for incoming control commands
         port_number_control = str(30000 + tag_index_value)
@@ -409,10 +414,10 @@ class StartStopComponent(Node):
                    "tip:" + "\t" + str(tag_object.interpulse_time_1 / 1000) + "\n" +
                    "tipu:" + "\t" + str(tag_object.interpulse_time_uncert / 1000) + "\n" +
                    "tipj:" + "\t" + str(tag_object.interpulse_time_jitter / 1000) + "\n" +
-                   "K:" + "\t" + "3" + "\n" +
+                   "K:" + "\t" + str(tag_object.k) + "\n" +
                    "opMode:" + "\t" + "freqSearchHardLock" + "\n" +
                    "excldFreqs:" + "\t" + "[Inf, -Inf]" + "\n" +
-                   "falseAlarmProb:" + "\t" + "0.00080" + "\n" +
+                   "falseAlarmProb:" + "\t" + str(tag_object.false_alarm_probability) + "\n" +
                    "dataRecordPath:" + "\t" + str(data_bin_path) + "\n" +
                    "processedOuputPath:" + "\t" + str(output_directory_path) + "\n" +
                    "ros2enable:" + "\t" + "true" + "\n" +

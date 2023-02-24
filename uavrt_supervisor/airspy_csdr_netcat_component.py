@@ -149,7 +149,7 @@ class AirspyCSDRNetcatComponent(Node):
             # process will not stay alive.
             airspy_csdr_netcat_standard_arguments_string = \
                 "/usr/local/bin/airspy_rx -f " + message_center_frequency + " -r - " \
-                "-p 0 -a " + str(SubprocessConstants.RADIO_SAMPLING_RATE.value) + \
+                "-p 0 -a " + str(SubprocessConstants.RADIO_SAMPLING_RATE.value) + " -t 0 -d " \
                 " | csdr fir_decimate_cc 8 0.05 HAMMING | netcat -w 1 -u localhost 10000"
             try:
                 if (self._airspy_csdr_netcat_subprocess_counter >=
@@ -272,12 +272,20 @@ class AirspyCSDRNetcatComponent(Node):
                         "A airspy_csdr_netcat subprocess has been stopped since it was dead.")
 
                 status_array.status.append(status)
-                # Publish status message
-                self._status_publisher.publish(status_array)
 
+        # ProcessLookupError: [Errno 3] No such process
+        # killpg(getpgid())
+        except ProcessLookupError as instance:
+        # Publish status message with ERROR level
+            message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
+            self.get_logger().error("Type: {}".format(type(instance)))
+            self.get_logger().error("Message: {}".format(instance))
         # RuntimeError: Dictionary changed size during iteration.
         # It seems impossible to get away from this error. W/e collection
         # type we use, it must be modified during Runtime.
         except RuntimeError as instance:
             self.get_logger().error("Type: {}".format(type(instance)))
             self.get_logger().error("Message: {}".format(instance))
+        finally:
+            # Publish status message using original message
+            self._status_publisher.publish(status_array)

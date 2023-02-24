@@ -135,7 +135,7 @@ class ChannelizerComponent(Node):
         # That directory should also contain the .so objects that were used to
         # compile the executable.
         # https://stackoverflow.com/a/64391542
-        # export LD_LIBRARY_PATH=/home/dasl/uavrt_workspace/uavrt_source/portairspy_channelize
+        # export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/dasl/uavrt_workspace/uavrt_source/portairspy_channelize"
         channelizer_export_string = {'LD_LIBRARY_PATH': str(
             self._channelizer_installation_directory)}
 
