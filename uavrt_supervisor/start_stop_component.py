@@ -15,9 +15,6 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# https://docs.python.org/3/library/random.html
-from random import randint
-
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
 
@@ -182,7 +179,7 @@ class StartStopComponent(Node):
         self._tag_object_list.append(message)
 
         # Need to convert NNNNNN to NNN.NNN
-        self._tag_frequency_list.append(message.frequency / 1000)
+        self._tag_frequency_list.append(message.frequency)
 
         # Increment the number of tags
         self._number_of_tags = + 1
@@ -201,7 +198,7 @@ class StartStopComponent(Node):
 
             # Optimal radio center frequency in MHz
             self._radio_center_frequency = radio_tuner_output[
-                TunerOutputConstants.RADIO_CENTER_FREQENCY.value]
+                TunerOutputConstants.RADIO_CENTER_FREQENCY.value] / 1000000
 
             # The center frequencies of each channel (ascending) in MHz
             center_channel_frequency_list = radio_tuner_output[
@@ -381,45 +378,53 @@ class StartStopComponent(Node):
 
         # Note: Minus 1 since value of tag ids start at 1
         # TODO: Check if this tag is an odd or even tag. Add 1 to odd tag port
-        # number. 
+        # number.
         tag_index_value = int(tag_channel_number_list[iteration])
-        # Center channel frequency for associated tag
-        center_frequency = float(
-            center_channel_frequency_list[tag_index_value])
+        # Center channel frequency in Hz for associated tag
+        # Another way to access the center frequency is [tag_index_value][<index>]
+        center_frequency = round(float(center_channel_frequency_list[tag_index_value]))
 
         # Port number for incoming data
         # TODO: Subtract 1 from here
-        port_number_data = str(20000 + tag_index_value)
+        port_number_data = str((20000 + tag_index_value) - 1)
         # Port number for incoming control commands
-        port_number_control = str(30000 + tag_index_value)
+        port_number_control = str((30000 + tag_index_value) - 1)
 
         # Sampling rate for each of the detectors
         detector_sampling_rate = str(SubprocessConstants.CHANNELIZER_SAMPLING_RATE.value /
                                      SubprocessConstants.CHANNELIZER_DECIMATION_RATE.value)
 
-        # TODO: Edit out k and falseAlarmProb hardcoded values.
-        file = open(config_file_path, "w")
-        file.write("##################################################" + "\n" +
-                   "ID:" + "\t" + str(tag_object.tag_id) + "\n" +
-                   "channelCenterFreqMHz:" + "\t" + str(center_frequency) + "\n" +
-                   "timeStamp:" + "\t" + str(time()) + "\n" +
-                   "ipData:" + "\t" + "0.0.0.0" + "\n" +
-                   "portData:" + "\t" + port_number_data + "\n" +
-                   "ipCntrl:" + "\t" + "127.0.0.1" + "\n" +
-                   "portCntrl:" + "\t" + port_number_control + "\n" +
-                   "Fs:" + "\t" + detector_sampling_rate + "\n" +
-                   # Converting miliseconds to seconds
-                   "tagFreqMHz:" + "\t" + str(tag_object.frequency / 1000) + "\n" +
-                   "tp:" + "\t" + str(tag_object.pulse_duration / 1000) + "\n" +
-                   "tip:" + "\t" + str(tag_object.interpulse_time_1 / 1000) + "\n" +
-                   "tipu:" + "\t" + str(tag_object.interpulse_time_uncert / 1000) + "\n" +
-                   "tipj:" + "\t" + str(tag_object.interpulse_time_jitter / 1000) + "\n" +
-                   "K:" + "\t" + str(tag_object.k) + "\n" +
-                   "opMode:" + "\t" + "freqSearchHardLock" + "\n" +
-                   "excldFreqs:" + "\t" + "[Inf, -Inf]" + "\n" +
-                   "falseAlarmProb:" + "\t" + str(tag_object.false_alarm_probability) + "\n" +
-                   "dataRecordPath:" + "\t" + str(data_bin_path) + "\n" +
-                   "processedOuputPath:" + "\t" + str(output_directory_path) + "\n" +
-                   "ros2enable:" + "\t" + "true" + "\n" +
-                   "startInRunState:" + "\t" + "true" + "\n")
-        file.close()
+        try:
+            file = open(config_file_path, "w")
+            file.write("##################################################" + "\n" +
+                       "ID:" + "\t" + str(tag_object.tag_id) + "\n" +
+                       "channelCenterFreqMHz:" + "\t" + str(center_frequency / 1000000) + "\n" +
+                       "timeStamp:" + "\t" + str(time()) + "\n" +
+                       "ipData:" + "\t" + "0.0.0.0" + "\n" +
+                       "portData:" + "\t" + port_number_data + "\n" +
+                       "ipCntrl:" + "\t" + "127.0.0.1" + "\n" +
+                       "portCntrl:" + "\t" + port_number_control + "\n" +
+                       "Fs:" + "\t" + detector_sampling_rate + "\n" +
+                       # Converting Hz to MHz
+                       "tagFreqMHz:" + "\t" + str(tag_object.frequency / 1000000) + "\n" +
+                       # Converting miliseconds to seconds
+                       "tp:" + "\t" + str(tag_object.pulse_duration / 1000) + "\n" +
+                       "tip:" + "\t" + str(tag_object.interpulse_time_1 / 1000) + "\n" +
+                       "tipu:" + "\t" + str(tag_object.interpulse_time_uncert / 1000) + "\n" +
+                       "tipj:" + "\t" + str(tag_object.interpulse_time_jitter / 1000) + "\n" +
+                       "K:" + "\t" + str(tag_object.k) + "\n" +
+                       "opMode:" + "\t" + "freqSearchHardLock" + "\n" +
+                       "excldFreqs:" + "\t" + "[Inf, -Inf]" + "\n" +
+                       "falseAlarmProb:" + "\t" + str(tag_object.false_alarm_probability) + "\n" +
+                       "dataRecordPath:" + "\t" + str(data_bin_path) + "\n" +
+                       "processedOuputPath:" + "\t" + str(output_directory_path) + "\n" +
+                       "ros2enable:" + "\t" + "true" + "\n" +
+                       "startInRunState:" + "\t" + "true" + "\n")
+        # The try block in the above example can potentially raise exceptions,
+        # such as AttributeError or NameError.
+        # https://realpython.com/python-with-statement/#the-try-finally-approach
+        except Exception as instance:
+            self.get_logger().error("Type: {}".format(type(instance)))
+            self.get_logger().error("Message: {}".format(instance))
+        finally:
+            file.close()

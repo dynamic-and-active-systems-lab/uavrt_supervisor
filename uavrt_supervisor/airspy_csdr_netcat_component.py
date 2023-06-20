@@ -277,7 +277,7 @@ class AirspyCSDRNetcatComponent(Node):
         # killpg(getpgid())
         except ProcessLookupError as instance:
         # Publish status message with ERROR level
-            message.status[DiagnosticStatusIndicesControl.DIAGNOSTIC_STATUS.value].level = b'2'
+            status.level = b'2'
             self.get_logger().error("Type: {}".format(type(instance)))
             self.get_logger().error("Message: {}".format(instance))
         # RuntimeError: Dictionary changed size during iteration.
