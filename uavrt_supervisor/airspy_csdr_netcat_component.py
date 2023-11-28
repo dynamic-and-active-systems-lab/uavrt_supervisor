@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Codebase for the Supervisor package used within the UAV-RT architecture.
-# Copyright (C) 2022 Dynamic and Active Systems Lab
+# Copyright (C) 2023 Dynamic and Active Systems Lab
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,15 +25,18 @@ from subprocess import DEVNULL
 # subproces that is started with the Shell=True argument. The SO link below
 # describes the correct process.
 # https://stackoverflow.com/a/4791612
+# https://docs.python.org/3/library/os.html
 from os import killpg
 from os import setsid
 from os import getpgid
+
+# https://docs.python.org/3/library/signal.html
 from signal import SIGTERM
 
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
 # https://docs.ros2.org/galactic/api/rclpy/api/logging.html
-# Log messages can be formatted with native Python .format functioanlity!
+# Log messages can be formatted with native Python .format functionality!
 from rclpy.logging import LoggingSeverity
 # https://docs.ros2.org/galactic/api/rclpy/api/topics.html#module-rclpy.publisher
 from rclpy.publisher import Publisher
@@ -52,13 +55,18 @@ from diagnostic_msgs.msg import DiagnosticArray
 from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
-# Enum values to describe the indice that is being accessed
+# Enum values used within the uavrt\_supervisor package to describe the index
+# that is being accessed.
 from uavrt_supervisor.enum_members_values import SubprocessConstants
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
 from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
 from uavrt_supervisor.enum_members_values import AirspyCSDRNetcatComponentSubprocessDictionary
 
 
+# The main purpose of this file is to implement a ROS (Robot Operating System) 2
+# Component in Python that manages and controls subprocesses related to the
+# Airspy, CSDR, and Netcat libraries/tools, including starting and stopping
+# the subprocess based on control messages and publishing status of those subprocess.
 class AirspyCSDRNetcatComponent(Node):
     def __init__(self):
         super().__init__('AirspyCSDRNetcatComponent')
@@ -152,6 +160,7 @@ class AirspyCSDRNetcatComponent(Node):
                 "-p 0 -a " + str(SubprocessConstants.RADIO_SAMPLING_RATE.value) + " -t 0 -d " \
                 " | csdr fir_decimate_cc 8 0.05 HAMMING | netcat -w 1 -u localhost 10000"
             try:
+                # TODO Should be checking if equal to limit, test this
                 if (self._airspy_csdr_netcat_subprocess_counter >=
                         self._airspy_csdr_netcat_subprocess_limit):
                     raise Exception(
@@ -176,7 +185,7 @@ class AirspyCSDRNetcatComponent(Node):
                 # We save the center frequency as well since we will
                 # need it later in order to restart the subprocess if need be.
                 self._airspy_csdr_netcat_subprocess_dictionary[message_hardware_id] = \
-                    [message_center_frequency, airspy_csdr_netcat_subprocess]
+                    [airspy_csdr_netcat_subprocess]
                 # Increment counter
                 self._airspy_csdr_netcat_subprocess_counter += 1
                 # Log
@@ -192,6 +201,7 @@ class AirspyCSDRNetcatComponent(Node):
 
         elif message_message == "stop" and message_hardware_id == "stop all":
             try:
+                # TODO Should be checking if equal 0, test this
                 if self._airspy_csdr_netcat_subprocess_counter <= 0:
                     raise Exception(
                         "The number of airspy_csdr_netcat subprocesses is already 0.")
@@ -227,8 +237,6 @@ class AirspyCSDRNetcatComponent(Node):
     def _status_timer_callback(self):
         status_array = DiagnosticArray()
         status = DiagnosticStatus()
-        center_frequency_value = KeyValue()
-        sample_rate_value = KeyValue()
 
         # Iterate through subprocess collection, polling each subprocess
         # Create new Diagnostic message, publish as status
@@ -239,12 +247,6 @@ class AirspyCSDRNetcatComponent(Node):
 
                 status.name = "airspy_csdr_netcat_component"
                 status.hardware_id = subprocess_hardware_id
-
-                center_frequency_value.key = "center_frequency"
-                center_frequency_value.value = self._airspy_csdr_netcat_subprocess_dictionary[
-                    subprocess_hardware_id][AirspyCSDRNetcatComponentSubprocessDictionary.CENTER_FREQUENCY.value]
-
-                status.values.append(center_frequency_value)
 
                 # A None value indicates that the process hasn’t terminated yet.
                 if self._airspy_csdr_netcat_subprocess_dictionary[

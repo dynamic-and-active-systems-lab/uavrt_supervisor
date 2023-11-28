@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Codebase for the Supervisor package used within the UAV-RT architecture.
-# Copyright (C) 2022 Dynamic and Active Systems Lab
+# Copyright (C) 2023 Dynamic and Active Systems Lab
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,9 +25,12 @@ from subprocess import DEVNULL
 # subproces that is started with the Shell=True argument. The SO link below
 # describes the correct process.
 # https://stackoverflow.com/a/4791612
+# https://docs.python.org/3/library/os.html
 from os import killpg
 from os import setsid
 from os import getpgid
+
+# https://docs.python.org/3/library/signal.html
 from signal import SIGTERM
 
 # https://docs.python.org/3/library/pathlib.html
@@ -55,7 +58,8 @@ from diagnostic_msgs.msg import DiagnosticArray
 from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
-# Enum values to describe the indice that is being accessed
+# Enum values used within the uavrt\_supervisor package to describe the index
+# that is being accessed.
 from uavrt_supervisor.enum_members_values import SubprocessConstants
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
 from uavrt_supervisor.enum_members_values import ChannelizerSubprocessDictionary

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Codebase for the Supervisor package used within the UAV-RT architecture.
-# Copyright (C) 2022 Dynamic and Active Systems Lab
+# Copyright (C) 2023 Dynamic and Active Systems Lab
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,8 @@ class SubprocessConstants(Enum):
     QUEUE_SIZE = 10
     # Rate at which status timer messages will be checked and published in seconds.
     STATUS_TIMER_MESSAGE_PUBLISH_RATE = .5
-    # Default radio sampling rate
+    # Sampling rate used by airspy_rx to determine the rate of which samples
+    # are collected.
     RADIO_SAMPLING_RATE = 3000000
     # Default channelizer sampling rate
     CHANNELIZER_SAMPLING_RATE = 375000
@@ -49,8 +50,7 @@ class KeyValueIndicesControl(Enum):
 
 
 class AirspyCSDRNetcatComponentSubprocessDictionary(Enum):
-    CENTER_FREQUENCY = 0
-    AIRSPY_CSDR_NETCAT_SUBPROCESS = 1
+    AIRSPY_CSDR_NETCAT_SUBPROCESS = 0
 
 
 class ChannelizerSubprocessDictionary(Enum):
@@ -58,5 +58,4 @@ class ChannelizerSubprocessDictionary(Enum):
 
 
 class DetectorSubprocessDictionary(Enum):
-    CENTER_FREQUENCY = 0
-    DETECTOR_SUBPROCESS = 1
+    DETECTOR_SUBPROCESS = 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Codebase for the Supervisor package used within the UAV-RT architecture.
-# Copyright (C) 2022 Dynamic and Active Systems Lab
+# Copyright (C) 2023 Dynamic and Active Systems Lab
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software

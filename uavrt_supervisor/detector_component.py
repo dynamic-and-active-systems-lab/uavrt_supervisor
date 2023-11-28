@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Codebase for the Supervisor package used within the UAV-RT architecture.
-# Copyright (C) 2022 Dynamic and Active Systems Lab
+# Copyright (C) 2023 Dynamic and Active Systems Lab
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -25,9 +25,12 @@ from subprocess import DEVNULL
 # subproces that is started with the Shell=True argument. The SO link below
 # describes the correct process.
 # https://stackoverflow.com/a/4791612
+# https://docs.python.org/3/library/os.html
 from os import killpg
 from os import setsid
 from os import getpgid
+
+# https://docs.python.org/3/library/signal.html
 from signal import SIGTERM
 
 # https://docs.python.org/3/library/pathlib.html
@@ -55,7 +58,8 @@ from diagnostic_msgs.msg import DiagnosticArray
 from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
-# Enum values to describe the indice that is being accessed
+# Enum values used within the uavrt\_supervisor package to describe the index
+# that is being accessed.
 from uavrt_supervisor.enum_members_values import SubprocessConstants
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
 from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
@@ -80,11 +84,9 @@ class DetectorComponent(Node):
         self._channelizer_installation_directory = \
             Path("./uavrt_source/portairspy_channelize").resolve()
         # Directory where ros 2 galactic local_setup.bash script is installed
+        # TODO: Not used
         self._uavrt_workspace_installation_directory = \
             Path("./install/local_setup.bash").resolve()
-        # Receive port for function control commands
-        # TEMP: REMOVE THIS
-        self._detector_command_port = ("127.0.0.1", 30000)
 
         # Note: This needs to be swapped out with a logging configuration
         # that goes with a launch file.
@@ -200,10 +202,8 @@ class DetectorComponent(Node):
                 # The hardware_id corresponds to a random int value between 1 and 100000
                 # There could be repeated hardware_ids but the chance is slim.
                 # This should be fixed later in the event you have multiple detectors.
-                # We save the center frquency as well since we will
-                # need it later in order to restart the subprocess if need be.
                 self._detector_subprocess_dictionary[message_hardware_id] = \
-                    [message_center_frequency, detector_subprocess]
+                    [detector_subprocess]
                 # Increment counter
                 self._detector_subprocess_counter += 1
                 # Log

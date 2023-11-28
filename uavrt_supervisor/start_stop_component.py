@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Codebase for the Supervisor package used within the UAV-RT architecture.
-# Copyright (C) 2022 Dynamic and Active Systems Lab
+# Copyright (C) 2023 Dynamic and Active Systems Lab
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -15,21 +15,21 @@
 # You should have received a copy of the GNU General Public License along with
 # this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Used for directory paths when filling out directory structure for each flight
 # https://docs.python.org/3/library/pathlib.html
 from pathlib import Path
 
-# https://docs.python.org/3/library/os.html#process-parameters
-from os import getcwd
-
+# Used for titling directories with the current time
 # https://docs.python.org/3/library/time.html
 from time import time
 from time import gmtime
 from time import strftime
 
-# Necessary for converting
+# Necessary for converting the output of tuner.py into an array
 # https://numpy.org/doc/stable/reference/generated/numpy.array.html
 from numpy import array
 
+# ROS 2 imports
 # https://docs.ros2.org/galactic/api/rclpy/api/node.html
 from rclpy.node import Node
 # https://docs.ros2.org/galactic/api/rclpy/api/logging.html
@@ -61,7 +61,7 @@ from uavrt_supervisor.tuner import tuner
 from uavrt_supervisor.enum_members_values import SubprocessConstants
 from uavrt_supervisor.enum_members_values import TunerOutputConstants
 from uavrt_supervisor.enum_members_values import DiagnosticStatusIndicesControl
-from uavrt_supervisor.enum_members_values import KeyValueIndicesControl
+
 
 
 class StartStopComponent(Node):
@@ -301,6 +301,8 @@ class StartStopComponent(Node):
 
         # Converting POSIX time to UTC in the format of year, month, day, hour,
         # minute, second
+        # TODO: I don't believe this is correct. Check out how ROS 2 log folders
+        # are named.
         converted_time = strftime(
             '%Y-%m-%d_%H-%M-%S', gmtime(time()))
 
@@ -313,17 +315,17 @@ class StartStopComponent(Node):
 
         flight_log_directory_path.mkdir()
 
-        # Make the directory for the netcat_airspyhf radio logs
-        netcat_airspyhf_log_directory_path = Path(flight_log_directory_path,
-                                                  "netcat_airspyhf_log")
+        # Make the directory for the airspy_csdr_netcat radio logs
+        airspy_csdr_netcat_path = Path(flight_log_directory_path,
+                                                  "airspy_csdr_netcat_log")
 
-        netcat_airspyhf_log_directory_path.mkdir()
+        airspy_csdr_netcat_path.mkdir()
 
-        # Make the directory for the airspyhf_channelizer radio logs
-        airspyhf_channelizer_log_directory_path = Path(flight_log_directory_path,
-                                                       "airspyhf_channelizer_log")
+        # Make the directory for the channelizer radio logs
+        channelizer_log_directory_path = Path(flight_log_directory_path,
+                                                       "channelizer_log")
 
-        airspyhf_channelizer_log_directory_path.mkdir()
+        channelizer_log_directory_path.mkdir()
 
         # Make the directory for the detector logs
         detector_logging_directory_path = Path(flight_log_directory_path,
