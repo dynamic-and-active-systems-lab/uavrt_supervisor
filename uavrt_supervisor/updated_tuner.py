@@ -228,7 +228,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
         tagsPerChannelMat[:, j] = np.sum(inBandLogic, axis = 1)
 
     tagsPerChannelMat[tagsPerChannelMat == 0 ] = float('NaN')
-
+    #Get the mean number of tags per channel for each of the possible radio center frequency options
     tagPerChannelMean = np.nanmean(tagsPerChannelMat, axis = 0)[:, np.newaxis];
 
 
@@ -259,9 +259,9 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     acceptableFreqLogic   = np.zeros(( nValidCentFreqs , 1 ), dtype=bool)
 
     channelEdgeCostList   = np.sort(np.unique(channelEdgeCost))
-
+    #The cost of is the average number of tags per channel for each radio center frequency
     tagPerChannelCost     = tagPerChannelMean
-
+    #Develop a list of asending tagPerChannelCosts
     tagPerChannelCostList = np.sort(np.unique(tagPerChannelCost))
 
     tick1 = 0
@@ -269,13 +269,21 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     tick2 = 0
 
     while ~np.any(acceptableFreqLogic):
+        #Start with the lowest tagPerChannelCost and only increase the acceptable 
+        # tagPerChannelCost if the channel edge cost can't also be minimized
         currTagPerChannelCost = tagPerChannelCostList[tick2]
-        #Of all those options whose tagsPerChannelMean equal to the minimum in that
-        #list, pick the ones that has the lowest minFreqError.
 
         tagPerChannelLogic   = tagPerChannelMean == currTagPerChannelCost;
-
+        #Of all those options whose tagsPerChannelMean equal to the minimum in that
+        #list, pick the ones that has the lowest minFreqError.
         while ~np.any(acceptableFreqLogic):
+            #channelEdgeCostList is an ascending list of channel edge cost options we have. 
+            #Start with lowest and check to see if the lowest value option aligns with the 
+            #radio center frequency option that has the lowest tag per channel value. If so
+            #we have an acceptable radio center frequency. If not, we go back and try the 
+            #next highest channel edge cost. We continue this until we've checked all the 
+            # channel edge costs. If this fails, we jump to the outer while loop and try
+            #the next highest tagPerChannelCost option. 
             currChannelEdgeCost  = channelEdgeCostList[tick1];
 
             channelEdgeCostLogic = channelEdgeCost == currChannelEdgeCost
@@ -284,8 +292,9 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
             tick1 = tick1 + 1
 
-        tick2 = tick2 + 2
+        tick2 = tick2 + 1
 
+#ORIGINAL METHOD OF SELECTING OPTION OF ACCEPTABLE LIST NEARST THE CENTROID OF THE TAG LIST
     # %There may be multiple options where tags per channel is minimized, as is
     # %tag channel edge cost. They are all acceptable options. Of all the
     # %acceptable options, choose that closes to the centroid of the tag list
@@ -294,14 +303,43 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     # acceptableFreqsInds    = freqInds(acceptableFreqLogic);
     # [~,indSel]             = min( abs( acceptableFreqs - mean(tagFreqVecMHzSorted) ) );
     # selectedOptionInd      = acceptableFreqsInds( indSel );
-
+    """
     acceptableFreqs        = fCentOptions[acceptableFreqLogic]
 
     freqInds               = np.arange(0,np.size(fCentOptions))[:, np.newaxis]
 
     acceptableFreqsInds    = freqInds[acceptableFreqLogic]
-
+    
     indSel                 = np.argmin( abs( acceptableFreqs - np.mean(tagFreqVecMHzSorted) ) )
+
+    selectedOptionInd      = acceptableFreqsInds[ indSel ]
+    """
+#NEW METHOD OF SELECTING OPTION OF ACCEPTABLE LIST THAT MINIMIZES THE MEAN ABSOLUTE VALUE 
+# DISTANCE OF EACH TAG TO ITS CHANNEL'S CENTER FREQUENCY.
+    acceptableFreqs        = fCentOptions[acceptableFreqLogic]
+
+    freqInds               = np.arange(0,np.size(fCentOptions))[:, np.newaxis]
+
+    acceptableFreqsInds    = freqInds[acceptableFreqLogic]
+    
+    nAcceptableFreqsInds = len(acceptableFreqsInds)
+    
+    meanTagOffsetList = np.zeros((nAcceptableFreqsInds,1))
+    for i in range(0, nAcceptableFreqsInds):
+        radioFcOption  = acceptableFreqs[i]
+
+        channelFcVec   = radioFcOption + channelVec
+        
+        tagChannelFreqFunc = interpolate.interp1d(np.squeeze(channelFcVec), np.squeeze(channelFcVec),  kind = 'nearest', bounds_error = False, fill_value = 'extrapolate')
+
+        tagChannelFreq = tagChannelFreqFunc(tagFreqVecMHzSorted)
+
+        # %How far off from channel center freq?
+        tagFreqOffestMHz = tagFreqVecMHzSorted - tagChannelFreq
+
+        meanTagOffsetList[i] = np.mean(abs(tagFreqOffestMHz))
+
+    indSel                 = np.argmin(meanTagOffsetList)
 
     selectedOptionInd      = acceptableFreqsInds[ indSel ]
 
@@ -335,7 +373,7 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
     tagFreqOffestMHz = tagFreqVecMHzSorted - tagChannelFreq
 
     # %Determine which channel each tag will be in
-    tagChannelNum = np.zeros((nTags,1))
+    tagChannelNum = np.zeros((nTags,1), dtype = int)
 
     for i in range(0, nTags):
         tagChannelNum[i] = np.flatnonzero(channelFcVec == tagChannelFreq[i])
@@ -380,11 +418,20 @@ def tuner(Fs, nChannels, tagFreqVecMHz):
 
 #Fs = 375000 #Sample rate into channelizer
 #nChannels = 48
-# Fs = 375000 #Sample rate into channelizer
+Fs = 375000 #Sample rate into channelizer
 # nChannels = 48
 # # #tagFreqVecMHz = np.array([149.922727, 149.928381, 149.934261, 149.957471, 149.997192, 150.009001, 150.025413, 150.077912, 150.087777])
 #tagFreqVecMHz = np.array([150.328, 150.328, 150.276])
+#tagFreqVecMHz = np.array([148.7096, 148.5248])
+tagFreqVecMHz = np.array([148.524, 148.520])
+nChannels = 100
 #tagFreqVecMHz = np.array([150.328])
-#[radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
-#print(tagChannelNum)
+[radioFc,channelFcVec, tagChannelNum, tagChannelEdgeWarning, multipleTagsInChannelWarning] = tuner(Fs, nChannels, tagFreqVecMHz)
+print(tagChannelNum)
+print(radioFc)
+channelFcVec_onlytags = channelFcVec[tagChannelNum.flatten()-1]
+print(channelFcVec_onlytags)
+print(tagFreqVecMHz)
+print(tagFreqVecMHz.transpose())
+print(1000000*np.subtract(tagFreqVecMHz, channelFcVec_onlytags.flatten()))
 # nChannels = 48
